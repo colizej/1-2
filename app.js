@@ -47,119 +47,25 @@ function beepEnd()   {
 // Unlock audio on first user tap (required on iOS)
 document.addEventListener('click', () => getAudioCtx(), { once: true });
 
-/* ===== DEMO MUSIC GENERATION ===== */
-function audioBufferToWavBlob(buffer) {
-  const nc = buffer.numberOfChannels, sr = buffer.sampleRate, ns = buffer.length, bps = 2;
-  const dataSize = ns * nc * bps;
-  const ab = new ArrayBuffer(44 + dataSize);
-  const v = new DataView(ab);
-  const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
-  ws(0, 'RIFF'); v.setUint32(4, 36 + dataSize, true);
-  ws(8, 'WAVE'); ws(12, 'fmt ');
-  v.setUint32(16, 16, true); v.setUint16(20, 1, true);
-  v.setUint16(22, nc, true); v.setUint32(24, sr, true);
-  v.setUint32(28, sr * nc * bps, true); v.setUint16(32, nc * bps, true);
-  v.setUint16(34, 16, true); ws(36, 'data'); v.setUint32(40, dataSize, true);
-  let off = 44;
-  for (let i = 0; i < ns; i++) {
-    for (let c = 0; c < nc; c++) {
-      const s = Math.max(-1, Math.min(1, buffer.getChannelData(c)[i]));
-      v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-      off += 2;
-    }
-  }
-  return new Blob([ab], { type: 'audio/wav' });
-}
-
-async function generateDemoAudio(phase) {
-  const SR = 22050, DUR = 8;
-  const ctx = new OfflineAudioContext(1, SR * DUR, SR);
-  if (phase === 'work') {
-    // 120 BPM — beat every 0.5s, 16 beats in 8 sec
-    for (let b = 0; b < 16; b++) {
-      const t = b * 0.5;
-      // Kick: freq sweep
-      const kick = ctx.createOscillator(), kickG = ctx.createGain();
-      kick.type = 'sine';
-      kick.frequency.setValueAtTime(160, t);
-      kick.frequency.exponentialRampToValueAtTime(50, t + 0.12);
-      kickG.gain.setValueAtTime(0.75, t);
-      kickG.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-      kick.connect(kickG); kickG.connect(ctx.destination);
-      kick.start(t); kick.stop(t + 0.3);
-      // Snare on off-beats
-      if (b % 2 === 1) {
-        const sn = ctx.createOscillator(), snG = ctx.createGain();
-        sn.type = 'triangle';
-        sn.frequency.setValueAtTime(280, t);
-        sn.frequency.exponentialRampToValueAtTime(90, t + 0.09);
-        snG.gain.setValueAtTime(0.28, t);
-        snG.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
-        sn.connect(snG); snG.connect(ctx.destination);
-        sn.start(t); sn.stop(t + 0.15);
-      }
-      // Hi-hat on 8th notes
-      for (let h = 0; h < 2; h++) {
-        const ht = t + h * 0.25;
-        const hat = ctx.createOscillator(), hatG = ctx.createGain();
-        hat.type = 'square'; hat.frequency.value = 7500;
-        hatG.gain.setValueAtTime(0.045, ht);
-        hatG.gain.exponentialRampToValueAtTime(0.001, ht + 0.04);
-        hat.connect(hatG); hatG.connect(ctx.destination);
-        hat.start(ht); hat.stop(ht + 0.05);
-      }
-    }
-    // Bass A2
-    const bass = ctx.createOscillator(), bassG = ctx.createGain();
-    bass.type = 'sine'; bass.frequency.value = 110; bassG.gain.value = 0.18;
-    bass.connect(bassG); bassG.connect(ctx.destination);
-    bass.start(0); bass.stop(DUR);
-  } else if (phase === 'rest') {
-    // Calm A-minor pad
-    [220, 261.63, 329.63].forEach((freq, i) => {
-      const osc = ctx.createOscillator(), env = ctx.createGain();
-      osc.type = 'sine'; osc.frequency.value = freq;
-      const vol = 0.11 - i * 0.02;
-      env.gain.setValueAtTime(0, 0);
-      env.gain.linearRampToValueAtTime(vol, 2.5);
-      env.gain.setValueAtTime(vol, 6);
-      env.gain.linearRampToValueAtTime(0, DUR);
-      osc.connect(env); env.connect(ctx.destination);
-      osc.start(0); osc.stop(DUR);
-    });
-    const sub = ctx.createOscillator(), subG = ctx.createGain();
-    sub.type = 'sine'; sub.frequency.value = 110;
-    subG.gain.setValueAtTime(0, 0);
-    subG.gain.linearRampToValueAtTime(0.06, 3);
-    subG.gain.linearRampToValueAtTime(0, DUR);
-    sub.connect(subG); subG.connect(ctx.destination);
-    sub.start(0); sub.stop(DUR);
-  } else { // cooldown
-    [[110, 0.07], [82.41, 0.05]].forEach(([freq, vol]) => {
-      const osc = ctx.createOscillator(), env = ctx.createGain();
-      osc.type = 'sine'; osc.frequency.value = freq;
-      env.gain.setValueAtTime(0, 0);
-      env.gain.linearRampToValueAtTime(vol, 3);
-      env.gain.setValueAtTime(vol, 5.5);
-      env.gain.linearRampToValueAtTime(0, DUR);
-      osc.connect(env); env.connect(ctx.destination);
-      osc.start(0); osc.stop(DUR);
-    });
-  }
-  const buffer = await ctx.startRendering();
-  return audioBufferToWavBlob(buffer);
-}
-
+/* ===== DEMO MUSIC INSTALL ===== */
 async function installDemoMusicIfNeeded() {
-  if (localStorage.getItem('odindva_demo_v1')) return;
+  if (localStorage.getItem('odindva_demo_v2')) return;
+  const map = {
+    work:     'sounds/demo_work.mp3',
+    rest:     'sounds/demo_relaxe.mp3',
+    cooldown: 'sounds/demo_fin.mp3',
+  };
   try {
-    for (const phase of ['work', 'rest', 'cooldown']) {
-      const blob = await generateDemoAudio(phase);
+    for (const [phase, path] of Object.entries(map)) {
+      const resp = await fetch(path);
+      if (!resp.ok) throw new Error(`fetch ${path} — ${resp.status}`);
+      const blob = await resp.blob();
       await saveMusicBlob('_demo', phase, blob);
     }
-    localStorage.setItem('odindva_demo_v1', '1');
+    localStorage.removeItem('odindva_demo_v1'); // clean up old synth demo
+    localStorage.setItem('odindva_demo_v2', '1');
   } catch (e) {
-    console.warn('Demo music generation failed', e);
+    console.warn('Demo music install failed:', e);
   }
 }
 
@@ -623,7 +529,7 @@ function setFormMusicUI(phase, name) {
     info.style.display = 'flex';
     info.classList.remove('music-demo-active');
     if (removeBtn) removeBtn.style.display = '';
-  } else if (localStorage.getItem('odindva_demo_v1')) {
+  } else if (localStorage.getItem('odindva_demo_v2')) {
     nameEl.textContent = 'Демо';
     info.style.display = 'flex';
     info.classList.add('music-demo-active');

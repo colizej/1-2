@@ -1,10 +1,13 @@
-const CACHE_NAME = 'intervalpro-v1';
+const CACHE_NAME = 'intervalpro-v2';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
+  './sounds/demo_work.mp3',
+  './sounds/demo_relaxe.mp3',
+  './sounds/demo_fin.mp3',
 ];
 
 self.addEventListener('install', (e) => {
