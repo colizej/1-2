@@ -1172,9 +1172,9 @@ document.getElementById('music-disabled-toggle').addEventListener('change', (e) 
 
 /* ===== INIT ===== */
 function init() {
+  installDemoMusicIfNeeded(); // start background fetch immediately
   loadWorkouts();
   renderHome();
-  installDemoMusicIfNeeded();
 
   // Register service worker
   if ('serviceWorker' in navigator) {

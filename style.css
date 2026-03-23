@@ -1006,14 +1006,24 @@ html, body {
 .music-section-hdr {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.music-section-hdr .form-label {
+  margin: 0;
+  flex: 1;
 }
 
 .toggle-beep-label {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 .toggle-switch {
