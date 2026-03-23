@@ -1,0 +1,21 @@
+# ОДИН·ДВА PWA — Apache config
+
+# MIME types for audio
+AddType audio/mp4 .m4a
+AddType audio/aac .m4a
+AddType audio/mpeg .mp3
+
+# MIME type for Web App Manifest
+AddType application/manifest+json .json
+
+# Service Worker: no caching so updates propagate immediately
+<FilesMatch "^sw\.js$">
+  Header set Cache-Control "no-cache, no-store, must-revalidate"
+  Header set Pragma "no-cache"
+  Header set Expires "0"
+</FilesMatch>
+
+# Force HTTPS (uncomment after SSL is active)
+# RewriteEngine On
+# RewriteCond %{HTTPS} off
+# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
