@@ -123,7 +123,7 @@ let _phaseAudioUrl = null;
 async function playPhaseMusic(workoutId, phase) {
   stopPhaseMusic();
   // Check workout-level music-disabled flag
-  const _wl = JSON.parse(localStorage.getItem('intervalpro_workouts') || '[]');
+  const _wl = JSON.parse(localStorage.getItem('odindva_workouts') || '[]');
   const _ww = _wl.find(x => String(x.id) === String(workoutId));
   if (_ww && _ww.musicDisabled) return;
   let blob = await loadMusicBlob(workoutId, phase);
@@ -180,12 +180,12 @@ const timer = {
 
 /* ===== STORAGE ===== */
 function saveWorkouts() {
-  localStorage.setItem('intervalpro_workouts', JSON.stringify(state.workouts));
+  localStorage.setItem('odindva_workouts', JSON.stringify(state.workouts));
 }
 
 function loadWorkouts() {
   try {
-    state.workouts = JSON.parse(localStorage.getItem('intervalpro_workouts')) || [];
+    state.workouts = JSON.parse(localStorage.getItem('odindva_workouts')) || [];
   } catch { state.workouts = []; }
 }
 
