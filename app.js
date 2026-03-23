@@ -420,10 +420,14 @@ function renderProgress() {
   cardsWrap.className = 'progress-cards';
   section.appendChild(cardsWrap);
 
-  history.slice(0, 50).forEach((item, i) => {
+  // newest first — reverse a copy, keep original index for deletion
+  const reversed = history.map((item, idx) => ({ item, idx })).reverse().slice(0, 50);
+  reversed.forEach(({ item, idx: origIdx }, i) => {
     const d = new Date(item.date);
     const dayName = RU_DAYS[d.getDay()];
-    const dateStr = `${d.getDate()} ${RU_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const dateStr = `${d.getDate()} ${RU_MONTHS[d.getMonth()]}, ${hh}:${mm}`;
 
     const card = document.createElement('div');
     card.className = 'progress-card';
@@ -447,7 +451,7 @@ function renderProgress() {
         card.style.transition = 'opacity 0.2s, transform 0.2s';
         card.style.opacity = '0';
         card.style.transform = 'translateX(20px)';
-        setTimeout(() => deleteHistoryItem(i), 220);
+        setTimeout(() => deleteHistoryItem(origIdx), 220);
       });
     });
     cardsWrap.appendChild(card);
