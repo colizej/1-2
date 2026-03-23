@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Один-Два" />
+  <title>Один-Два</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- SCREEN: Home -->
+  <div id="screen-home" class="screen active">
+    <header class="app-header">
+      <div class="app-header-brand">
+        <svg class="app-logo-svg" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- outer track -->
+          <circle cx="22" cy="22" r="18" stroke="#2a2a3a" stroke-width="3"/>
+          <!-- progress arc ~270deg, work color -->
+          <circle cx="22" cy="22" r="18"
+            stroke="url(#logoGrad)"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-dasharray="113.1 113.1"
+            stroke-dashoffset="28.3"
+            transform="rotate(-90 22 22)"/>
+          <!-- center pulse dot -->
+          <circle cx="22" cy="22" r="4" fill="url(#logoGrad)"/>
+          <!-- crown notch -->
+          <rect x="19.5" y="2" width="5" height="3.5" rx="1.5" fill="#7c6fff"/>
+          <defs>
+            <linearGradient id="logoGrad" x1="4" y1="4" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#7c6fff"/>
+              <stop offset="100%" stop-color="#ff6f84"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <h1 class="app-title"><span class="title-one">ОДИН</span><span class="title-dot">·</span><span class="title-two">ДВА</span></h1>
+      </div>
+      <button class="btn-icon" id="btn-open-create" aria-label="Создать упражнение">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </header>
+
+    <div id="workouts-list" class="workouts-list">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">
+          <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="32" cy="32" r="28"/>
+            <path d="M20 32 Q32 16 44 32 Q32 48 20 32Z"/>
+            <circle cx="32" cy="32" r="6" fill="currentColor"/>
+          </svg>
+        </div>
+        <p>Нет упражнений</p>
+        <span>Нажми + чтобы создать первое</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN: Detail -->
+  <div id="screen-detail" class="screen">
+    <header class="app-header">
+      <button class="btn-back" id="btn-back-detail" aria-label="Назад">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h2 id="detail-title">Упражнение</h2>
+      <button class="btn-icon" id="btn-detail-gear" aria-label="Настройки">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </header>
+
+    <div class="detail-scroll">
+      <div class="detail-meta-row">
+        <div class="detail-stat">
+          <span class="detail-stat-val" id="detail-intervals">0</span>
+          <span class="detail-stat-lbl">подходов</span>
+        </div>
+        <div class="detail-stat">
+          <span class="detail-stat-val" id="detail-work">—</span>
+          <span class="detail-stat-lbl">работа</span>
+        </div>
+        <div class="detail-stat">
+          <span class="detail-stat-val" id="detail-rest">—</span>
+          <span class="detail-stat-lbl">отдых</span>
+        </div>
+        <div class="detail-stat">
+          <span class="detail-stat-val" id="detail-cooldown">—</span>
+          <span class="detail-stat-lbl">заминка</span>
+        </div>
+      </div>
+
+      <div class="detail-section-label">Подходы</div>
+      <div id="detail-exercises" class="detail-exercises"></div>
+    </div>
+
+    <div class="detail-footer">
+      <button class="btn-start" id="btn-start-workout">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Начать
+      </button>
+    </div>
+  </div>
+
+  <!-- BOTTOM SHEET: Gear menu -->
+  <div class="sheet-overlay" id="sheet-overlay" style="display:none">
+    <div class="bottom-sheet" id="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <button class="sheet-btn" id="sheet-edit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Редактировать
+      </button>
+      <button class="sheet-btn sheet-btn-danger" id="sheet-delete">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        Удалить упражнение
+      </button>
+      <button class="sheet-btn sheet-btn-cancel" id="sheet-cancel">Отмена</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: Create Workout -->
+  <div id="screen-create" class="screen">
+    <header class="app-header">
+      <button class="btn-back" id="btn-back-create" aria-label="Назад">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h2>Новое упражнение</h2>
+      <button class="btn-text" id="btn-save-workout">Сохранить</button>
+    </header>
+
+    <div class="form-scroll">
+      <div class="form-section">
+        <label class="form-label">Название упражнения</label>
+        <input type="text" id="workout-name" class="form-input" placeholder="Например: Утренняя зарядка" />
+      </div>
+
+      <div class="form-section">
+        <div class="section-header">
+          <label class="form-label">Подходы</label>
+          <button class="btn-small" id="btn-add-exercise">+ Добавить</button>
+        </div>
+        <div id="exercises-list" class="exercises-list">
+          <!-- динамически -->
+        </div>
+      </div>
+
+      <div class="form-section intervals-info-section">
+        <span class="form-label">Интервалов</span>
+        <div class="intervals-display">
+          <span id="val-intervals">0</span>
+          <small>добавляйте подходы</small>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Время</label>
+        <div class="timer-settings">
+          <div class="setting-row">
+            <span>Работа</span>
+            <div class="stepper">
+              <button class="step-btn" data-target="work" data-dir="-5">−</button>
+              <span id="val-work">60</span><small>сек</small>
+              <button class="step-btn" data-target="work" data-dir="5">+</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <span>Отдых</span>
+            <div class="stepper">
+              <button class="step-btn" data-target="rest" data-dir="-5">−</button>
+              <span id="val-rest">10</span><small>сек</small>
+              <button class="step-btn" data-target="rest" data-dir="5">+</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <span>Заминка</span>
+            <div class="stepper">
+              <button class="step-btn" data-target="cooldown" data-dir="-5">−</button>
+              <span id="val-cooldown">30</span><small>сек</small>
+              <button class="step-btn" data-target="cooldown" data-dir="5">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Музыка</label>
+        <div class="music-phases">
+
+          <div class="music-phase-row">
+            <span class="music-phase-label">Работа</span>
+            <div class="music-picker">
+              <label class="music-pick-btn" for="music-file-input-work">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                Файл
+              </label>
+              <input type="file" id="music-file-input-work" accept="audio/*" style="display:none" />
+              <div class="music-track-info" id="music-track-info-work" style="display:none">
+                <span id="music-track-name-work"></span>
+                <button class="music-remove-btn" id="music-remove-btn-work" aria-label="Удалить музыку">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="music-phase-row">
+            <span class="music-phase-label">Отдых</span>
+            <div class="music-picker">
+              <label class="music-pick-btn" for="music-file-input-rest">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                Файл
+              </label>
+              <input type="file" id="music-file-input-rest" accept="audio/*" style="display:none" />
+              <div class="music-track-info" id="music-track-info-rest" style="display:none">
+                <span id="music-track-name-rest"></span>
+                <button class="music-remove-btn" id="music-remove-btn-rest" aria-label="Удалить музыку">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="music-phase-row">
+            <span class="music-phase-label">Заминка</span>
+            <div class="music-picker">
+              <label class="music-pick-btn" for="music-file-input-cooldown">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                Файл
+              </label>
+              <input type="file" id="music-file-input-cooldown" accept="audio/*" style="display:none" />
+              <div class="music-track-info" id="music-track-info-cooldown" style="display:none">
+                <span id="music-track-name-cooldown"></span>
+                <button class="music-remove-btn" id="music-remove-btn-cooldown" aria-label="Удалить музыку">✕</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SCREEN: Timer -->
+  <div id="screen-timer" class="screen">
+    <header class="timer-header">
+      <button class="btn-back btn-back-timer" id="btn-stop-timer" aria-label="Стоп">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h2 id="timer-workout-name">Тренировка</h2>
+      <div class="timer-progress-text" id="timer-round-label">Раунд 1/5</div>
+    </header>
+
+    <!-- Center zone -->
+    <div class="timer-center">
+
+    <!-- Exercise label -->
+    <div class="exercise-label" id="exercise-label">
+      <span id="exercise-name">Приседания</span>
+      <span class="phase-badge" id="phase-badge">РАБОТА</span>
+    </div>
+
+    <!-- Interval dots -->
+    <div class="intervals-track" id="intervals-track">
+      <!-- динамически -->
+    </div>
+
+    <!-- Main circle tap area -->
+    <div class="circle-container" id="circle-tap" role="button" aria-label="Tap to start/stop">
+      <svg class="circle-svg" viewBox="0 0 280 280" id="circle-svg">
+        <!-- Background track -->
+        <circle class="circle-bg" cx="140" cy="140" r="120"/>
+        <!-- Progress arc -->
+        <circle class="circle-progress" id="circle-progress" cx="140" cy="140" r="120"
+          stroke-dasharray="753.98"
+          stroke-dashoffset="753.98"
+          transform="rotate(-90 140 140)"/>
+        <!-- Pulse ring -->
+        <circle class="circle-pulse" id="circle-pulse" cx="140" cy="140" r="120"/>
+      </svg>
+
+      <div class="circle-content">
+        <div class="circle-time" id="circle-time">TAP</div>
+        <div class="circle-sub" id="circle-sub">чтобы начать</div>
+      </div>
+    </div> <!-- /.circle-container -->
+
+    </div> <!-- /.timer-center -->
+
+    <!-- Prep overlay -->
+    <div class="prep-overlay" id="prep-overlay" style="display:none">
+      <div class="prep-count" id="prep-count">3</div>
+      <div class="prep-label">ГОТОВЬСЯ</div>
+    </div>
+  </div>
+
+  <!-- SCREEN: Results -->
+  <div id="screen-results" class="screen">
+    <div class="results-container">
+      <div class="confetti-area" id="confetti-area"></div>
+
+      <div class="trophy-icon">🏆</div>
+      <h2 class="results-title">Отлично!</h2>
+      <p class="results-subtitle" id="results-subtitle">Тренировка завершена</p>
+
+      <div class="results-stats">
+        <div class="stat-card">
+          <span class="stat-value" id="res-rounds">0</span>
+          <span class="stat-label">Подходов</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="res-time">0:00</span>
+          <span class="stat-label">Время</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="res-exercises">0</span>
+          <span class="stat-label">Упражнений</span>
+        </div>
+      </div>
+
+      <div class="results-log" id="results-log">
+        <!-- лог интервалов -->
+      </div>
+
+      <button class="btn-primary" id="btn-results-home">На главную</button>
+    </div>
+  </div>
+
+  <!-- CONFIRM DIALOG -->
+  <div class="confirm-overlay" id="confirm-overlay" style="display:none">
+    <div class="confirm-dialog">
+      <p class="confirm-msg" id="confirm-msg">Удалить?</p>
+      <div class="confirm-actions">
+        <button class="confirm-btn-cancel" id="confirm-cancel">Отмена</button>
+        <button class="confirm-btn-ok" id="confirm-ok">Удалить</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+  <script src="app.js"></script>
+</body>
+</html>
