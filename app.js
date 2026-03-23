@@ -49,11 +49,11 @@ document.addEventListener('click', () => getAudioCtx(), { once: true });
 
 /* ===== DEMO MUSIC INSTALL ===== */
 async function installDemoMusicIfNeeded() {
-  if (localStorage.getItem('odindva_demo_v2')) return;
+  if (localStorage.getItem('odindva_demo_v3')) return;
   const map = {
-    work:     'sounds/demo_work.mp3',
-    rest:     'sounds/demo_relaxe.mp3',
-    cooldown: 'sounds/demo_fin.mp3',
+    work:     'sounds/demo_work.m4a',
+    rest:     'sounds/demo_relaxe.m4a',
+    cooldown: 'sounds/demo_fin.m4a',
   };
   try {
     for (const [phase, path] of Object.entries(map)) {
@@ -62,8 +62,9 @@ async function installDemoMusicIfNeeded() {
       const blob = await resp.blob();
       await saveMusicBlob('_demo', phase, blob);
     }
-    localStorage.removeItem('odindva_demo_v1'); // clean up old synth demo
-    localStorage.setItem('odindva_demo_v2', '1');
+    localStorage.removeItem('odindva_demo_v1');
+    localStorage.removeItem('odindva_demo_v2');
+    localStorage.setItem('odindva_demo_v3', '1');
   } catch (e) {
     console.warn('Demo music install failed:', e);
   }
@@ -529,7 +530,7 @@ function setFormMusicUI(phase, name) {
     info.style.display = 'flex';
     info.classList.remove('music-demo-active');
     if (removeBtn) removeBtn.style.display = '';
-  } else if (localStorage.getItem('odindva_demo_v2')) {
+  } else if (localStorage.getItem('odindva_demo_v3')) {
     nameEl.textContent = 'Демо';
     info.style.display = 'flex';
     info.classList.add('music-demo-active');

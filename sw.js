@@ -1,13 +1,13 @@
-const CACHE_NAME = 'odindva-v2';
+const CACHE_NAME = 'odindva-v3';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
-  './sounds/demo_work.mp3',
-  './sounds/demo_relaxe.mp3',
-  './sounds/demo_fin.mp3',
+  './sounds/demo_work.m4a',
+  './sounds/demo_relaxe.m4a',
+  './sounds/demo_fin.m4a',
 ];
 
 self.addEventListener('install', (e) => {
