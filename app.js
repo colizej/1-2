@@ -47,6 +47,122 @@ function beepEnd()   {
 // Unlock audio on first user tap (required on iOS)
 document.addEventListener('click', () => getAudioCtx(), { once: true });
 
+/* ===== DEMO MUSIC GENERATION ===== */
+function audioBufferToWavBlob(buffer) {
+  const nc = buffer.numberOfChannels, sr = buffer.sampleRate, ns = buffer.length, bps = 2;
+  const dataSize = ns * nc * bps;
+  const ab = new ArrayBuffer(44 + dataSize);
+  const v = new DataView(ab);
+  const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  ws(0, 'RIFF'); v.setUint32(4, 36 + dataSize, true);
+  ws(8, 'WAVE'); ws(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+  v.setUint16(22, nc, true); v.setUint32(24, sr, true);
+  v.setUint32(28, sr * nc * bps, true); v.setUint16(32, nc * bps, true);
+  v.setUint16(34, 16, true); ws(36, 'data'); v.setUint32(40, dataSize, true);
+  let off = 44;
+  for (let i = 0; i < ns; i++) {
+    for (let c = 0; c < nc; c++) {
+      const s = Math.max(-1, Math.min(1, buffer.getChannelData(c)[i]));
+      v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      off += 2;
+    }
+  }
+  return new Blob([ab], { type: 'audio/wav' });
+}
+
+async function generateDemoAudio(phase) {
+  const SR = 22050, DUR = 8;
+  const ctx = new OfflineAudioContext(1, SR * DUR, SR);
+  if (phase === 'work') {
+    // 120 BPM — beat every 0.5s, 16 beats in 8 sec
+    for (let b = 0; b < 16; b++) {
+      const t = b * 0.5;
+      // Kick: freq sweep
+      const kick = ctx.createOscillator(), kickG = ctx.createGain();
+      kick.type = 'sine';
+      kick.frequency.setValueAtTime(160, t);
+      kick.frequency.exponentialRampToValueAtTime(50, t + 0.12);
+      kickG.gain.setValueAtTime(0.75, t);
+      kickG.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      kick.connect(kickG); kickG.connect(ctx.destination);
+      kick.start(t); kick.stop(t + 0.3);
+      // Snare on off-beats
+      if (b % 2 === 1) {
+        const sn = ctx.createOscillator(), snG = ctx.createGain();
+        sn.type = 'triangle';
+        sn.frequency.setValueAtTime(280, t);
+        sn.frequency.exponentialRampToValueAtTime(90, t + 0.09);
+        snG.gain.setValueAtTime(0.28, t);
+        snG.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+        sn.connect(snG); snG.connect(ctx.destination);
+        sn.start(t); sn.stop(t + 0.15);
+      }
+      // Hi-hat on 8th notes
+      for (let h = 0; h < 2; h++) {
+        const ht = t + h * 0.25;
+        const hat = ctx.createOscillator(), hatG = ctx.createGain();
+        hat.type = 'square'; hat.frequency.value = 7500;
+        hatG.gain.setValueAtTime(0.045, ht);
+        hatG.gain.exponentialRampToValueAtTime(0.001, ht + 0.04);
+        hat.connect(hatG); hatG.connect(ctx.destination);
+        hat.start(ht); hat.stop(ht + 0.05);
+      }
+    }
+    // Bass A2
+    const bass = ctx.createOscillator(), bassG = ctx.createGain();
+    bass.type = 'sine'; bass.frequency.value = 110; bassG.gain.value = 0.18;
+    bass.connect(bassG); bassG.connect(ctx.destination);
+    bass.start(0); bass.stop(DUR);
+  } else if (phase === 'rest') {
+    // Calm A-minor pad
+    [220, 261.63, 329.63].forEach((freq, i) => {
+      const osc = ctx.createOscillator(), env = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.value = freq;
+      const vol = 0.11 - i * 0.02;
+      env.gain.setValueAtTime(0, 0);
+      env.gain.linearRampToValueAtTime(vol, 2.5);
+      env.gain.setValueAtTime(vol, 6);
+      env.gain.linearRampToValueAtTime(0, DUR);
+      osc.connect(env); env.connect(ctx.destination);
+      osc.start(0); osc.stop(DUR);
+    });
+    const sub = ctx.createOscillator(), subG = ctx.createGain();
+    sub.type = 'sine'; sub.frequency.value = 110;
+    subG.gain.setValueAtTime(0, 0);
+    subG.gain.linearRampToValueAtTime(0.06, 3);
+    subG.gain.linearRampToValueAtTime(0, DUR);
+    sub.connect(subG); subG.connect(ctx.destination);
+    sub.start(0); sub.stop(DUR);
+  } else { // cooldown
+    [[110, 0.07], [82.41, 0.05]].forEach(([freq, vol]) => {
+      const osc = ctx.createOscillator(), env = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.value = freq;
+      env.gain.setValueAtTime(0, 0);
+      env.gain.linearRampToValueAtTime(vol, 3);
+      env.gain.setValueAtTime(vol, 5.5);
+      env.gain.linearRampToValueAtTime(0, DUR);
+      osc.connect(env); env.connect(ctx.destination);
+      osc.start(0); osc.stop(DUR);
+    });
+  }
+  const buffer = await ctx.startRendering();
+  return audioBufferToWavBlob(buffer);
+}
+
+async function installDemoMusicIfNeeded() {
+  if (localStorage.getItem('odindva_demo_v1')) return;
+  try {
+    for (const phase of ['work', 'rest', 'cooldown']) {
+      const blob = await generateDemoAudio(phase);
+      await saveMusicBlob('_demo', phase, blob);
+    }
+    localStorage.setItem('odindva_demo_v1', '1');
+  } catch (e) {
+    console.warn('Demo music generation failed', e);
+  }
+}
+
 /* ===== MUSIC STORAGE (IndexedDB) ===== */
 const MUSIC_DB_NAME = 'odindva_music';
 const MUSIC_STORE   = 'tracks';
@@ -100,7 +216,12 @@ let _phaseAudioUrl = null;
 
 async function playPhaseMusic(workoutId, phase) {
   stopPhaseMusic();
-  const blob = await loadMusicBlob(workoutId, phase);
+  // Check workout-level music-disabled flag
+  const _wl = JSON.parse(localStorage.getItem('intervalpro_workouts') || '[]');
+  const _ww = _wl.find(x => String(x.id) === String(workoutId));
+  if (_ww && _ww.musicDisabled) return;
+  let blob = await loadMusicBlob(workoutId, phase);
+  if (!blob) blob = await loadMusicBlob('_demo', phase); // fallback to demo
   if (!blob) return;
   _phaseAudioUrl = URL.createObjectURL(blob);
   _phaseAudio = new Audio(_phaseAudioUrl);
@@ -261,7 +382,10 @@ function openDetail(w) {
     { label: 'Заминка', name: w.musicNameCooldown },
   ].filter(t => t.name);
 
-  if (tracks.length > 0) {
+  if (w.musicDisabled) {
+    musicRow.innerHTML = `<div class="detail-music-line"><span class="detail-music-beep-note">🔕 Только бип — без музыки</span></div>`;
+    musicRow.style.display = 'block';
+  } else if (tracks.length > 0) {
     musicRow.innerHTML = tracks.map(t => `
       <div class="detail-music-line">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
@@ -355,9 +479,11 @@ function openEditScreen(w) {
   formSettings = { intervals: w.intervals, work: w.work, rest: w.rest, cooldown: w.cooldown };
   formExercises = w.exercises.map(e => ({ ...e }));
   resetFormMusic();
+  formMusicDisabled = w.musicDisabled || false;
   setFormMusicUI('work',     w.musicName         || null);
   setFormMusicUI('rest',     w.musicNameRest     || null);
   setFormMusicUI('cooldown', w.musicNameCooldown || null);
+  updateMusicDisabledUI();
 
   document.getElementById('workout-name').value = w.name;
   document.getElementById('exercises-list').innerHTML = '';
@@ -475,19 +601,36 @@ const formMusic = {
   rest:     { blob: null, action: null },
   cooldown: { blob: null, action: null },
 };
+let formMusicDisabled = false;
+
+function updateMusicDisabledUI() {
+  const toggle = document.getElementById('music-disabled-toggle');
+  const wrap = document.getElementById('music-phases-wrap');
+  if (toggle) toggle.checked = formMusicDisabled;
+  if (wrap) wrap.classList.toggle('music-disabled', formMusicDisabled);
+}
 
 function resetFormMusic() {
   ['work', 'rest', 'cooldown'].forEach(p => { formMusic[p] = { blob: null, action: null }; });
 }
 
 function setFormMusicUI(phase, name) {
-  const info = document.getElementById(`music-track-info-${phase}`);
+  const info   = document.getElementById(`music-track-info-${phase}`);
   const nameEl = document.getElementById(`music-track-name-${phase}`);
+  const removeBtn = document.getElementById(`music-remove-btn-${phase}`);
   if (name) {
     nameEl.textContent = name;
     info.style.display = 'flex';
+    info.classList.remove('music-demo-active');
+    if (removeBtn) removeBtn.style.display = '';
+  } else if (localStorage.getItem('odindva_demo_v1')) {
+    nameEl.textContent = 'Демо';
+    info.style.display = 'flex';
+    info.classList.add('music-demo-active');
+    if (removeBtn) removeBtn.style.display = 'none';
   } else {
     info.style.display = 'none';
+    info.classList.remove('music-demo-active');
   }
 }
 
@@ -512,10 +655,12 @@ function openCreateScreen() {
   formSettings = { intervals: 0, work: 60, rest: 10, cooldown: 30 };
   formExercises = [];
   resetFormMusic();
+  formMusicDisabled = false;
   document.getElementById('workout-name').value = '';
   document.getElementById('exercises-list').innerHTML = '';
   document.getElementById('screen-create').dataset.editId = '';
   ['work', 'rest', 'cooldown'].forEach(p => setFormMusicUI(p, null));
+  updateMusicDisabledUI();
   updateStepperDisplay();
   showScreen('screen-create');
 }
@@ -610,6 +755,7 @@ function saveWorkout() {
         work: formSettings.work,
         rest: formSettings.rest,
         cooldown: formSettings.cooldown,
+        musicDisabled:     formMusicDisabled,
         musicName:         resolveName('work',     old.musicName),
         musicNameRest:     resolveName('rest',     old.musicNameRest),
         musicNameCooldown: resolveName('cooldown', old.musicNameCooldown),
@@ -640,6 +786,7 @@ function saveWorkout() {
     work: formSettings.work,
     rest: formSettings.rest,
     cooldown: formSettings.cooldown,
+    musicDisabled:     formMusicDisabled,
     musicName:         formMusic.work.blob     ? formMusic.work.blob.name     : null,
     musicNameRest:     formMusic.rest.blob     ? formMusic.rest.blob.name     : null,
     musicNameCooldown: formMusic.cooldown.blob ? formMusic.cooldown.blob.name : null,
@@ -1110,10 +1257,17 @@ function vibrate(pattern) {
   if (navigator.vibrate) navigator.vibrate(pattern);
 }
 
+// Music disabled toggle
+document.getElementById('music-disabled-toggle').addEventListener('change', (e) => {
+  formMusicDisabled = e.target.checked;
+  updateMusicDisabledUI();
+});
+
 /* ===== INIT ===== */
 function init() {
   loadWorkouts();
   renderHome();
+  installDemoMusicIfNeeded();
 
   // Register service worker
   if ('serviceWorker' in navigator) {

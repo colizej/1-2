@@ -1002,6 +1002,65 @@ html, body {
 }
 .music-remove-btn:hover { color: var(--accent2); }
 
+/* ===== MUSIC DISABLED TOGGLE ===== */
+.music-section-hdr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.toggle-beep-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.toggle-switch {
+  position: relative;
+  width: 40px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-knob {
+  position: absolute;
+  inset: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.toggle-knob::before {
+  content: '';
+  position: absolute;
+  left: 3px; top: 3px;
+  width: 16px; height: 16px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+.toggle-switch input:checked + .toggle-knob { background: var(--accent); border-color: var(--accent); }
+.toggle-switch input:checked + .toggle-knob::before { transform: translateX(16px); background: #fff; }
+
+.music-phases.music-disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.music-track-info.music-demo-active {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.1);
+  color: var(--text-muted);
+}
+
+.detail-music-beep-note {
+  font-size: 13px;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
 .detail-footer {
   padding: 16px 16px calc(16px + var(--safe-bottom));
   flex-shrink: 0;

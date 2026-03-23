@@ -193,8 +193,15 @@
       </div>
 
       <div class="form-section">
-        <label class="form-label">Музыка</label>
-        <div class="music-phases">
+        <div class="music-section-hdr">
+          <span class="form-label" style="margin:0">Музыка</span>
+          <label class="toggle-switch" title="Только бип">
+            <input type="checkbox" id="music-disabled-toggle">
+            <span class="toggle-knob"></span>
+          </label>
+          <span class="toggle-beep-label">Только бип</span>
+        </div>
+        <div class="music-phases" id="music-phases-wrap">
 
           <div class="music-phase-row">
             <span class="music-phase-label">Работа</span>
