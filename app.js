@@ -118,11 +118,13 @@ function deleteAllMusicBlobs(workoutId) {
 }
 
 /* ===== MUSIC PLAYER ===== */
-let _phaseAudio = null;
+// Single Audio element reused across all phases — keeps browser autoplay unlock
+const _phaseAudio = new Audio();
+_phaseAudio.loop = true;
+_phaseAudio.volume = 0.6;
 let _phaseAudioUrl = null;
 
 async function playPhaseMusic(workoutId, phase) {
-  stopPhaseMusic();
   // Check workout-level music-disabled flag
   const _wl = JSON.parse(localStorage.getItem('odindva_workouts') || '[]');
   const _ww = _wl.find(x => String(x.id) === String(workoutId));
@@ -130,31 +132,33 @@ async function playPhaseMusic(workoutId, phase) {
   let blob = await loadMusicBlob(workoutId, phase);
   if (!blob) blob = await loadMusicBlob('_demo', phase); // fallback to demo
   if (!blob) return;
-  _phaseAudioUrl = URL.createObjectURL(blob);
-  _phaseAudio = new Audio(_phaseAudioUrl);
-  _phaseAudio.loop  = true;
-  _phaseAudio.volume = 0.6;
-  _phaseAudio.play().catch(() => {});
-}
-
-function stopPhaseMusic() {
-  if (_phaseAudio) {
-    _phaseAudio.pause();
-    _phaseAudio.currentTime = 0;
-    _phaseAudio = null;
-  }
+  _phaseAudio.pause();
   if (_phaseAudioUrl) {
     URL.revokeObjectURL(_phaseAudioUrl);
     _phaseAudioUrl = null;
   }
+  _phaseAudioUrl = URL.createObjectURL(blob);
+  _phaseAudio.src = _phaseAudioUrl;
+  _phaseAudio.currentTime = 0;
+  _phaseAudio.play().catch(() => {});
+}
+
+function stopPhaseMusic() {
+  _phaseAudio.pause();
+  _phaseAudio.currentTime = 0;
+  if (_phaseAudioUrl) {
+    URL.revokeObjectURL(_phaseAudioUrl);
+    _phaseAudioUrl = null;
+  }
+  _phaseAudio.src = '';
 }
 
 function pausePhaseMusic() {
-  if (_phaseAudio && !_phaseAudio.paused) _phaseAudio.pause();
+  if (!_phaseAudio.paused) _phaseAudio.pause();
 }
 
 function resumePhaseMusic() {
-  if (_phaseAudio && _phaseAudio.paused) _phaseAudio.play().catch(() => {});
+  if (_phaseAudio.paused && _phaseAudio.src) _phaseAudio.play().catch(() => {});
 }
 
 /* ===== APP STATE ===== */
