@@ -88,7 +88,6 @@ async function installDemoMusicIfNeeded() {
   const map = {
     work:     'sounds/demo_work.m4a',
     rest:     'sounds/demo_relaxe.m4a',
-    cooldown: 'sounds/demo_fin.m4a',
   };
   try {
     for (const [phase, path] of Object.entries(map)) {
@@ -149,7 +148,7 @@ async function deleteMusicBlob(workoutId, phase) {
 }
 
 function deleteAllMusicBlobs(workoutId) {
-  ['work', 'rest', 'cooldown'].forEach(p => deleteMusicBlob(workoutId, p));
+  ['work', 'rest'].forEach(p => deleteMusicBlob(workoutId, p));
 }
 
 /* ===== MUSIC PLAYER ===== */
@@ -210,7 +209,6 @@ function resumePhaseMusic() {
 const state = {
   workouts: [],
   editing: null,
-  settings: { intervals: 5, work: 60, rest: 10, cooldown: 30 },
   exercises: [],
 };
 
@@ -219,7 +217,7 @@ const timer = {
   workout: null,
   currentRound: 0,
   currentExIdx: 0,
-  phase: 'idle',     // idle | prep | work | rest | cooldown | done
+  phase: 'idle',     // idle | prep | work | rest | done
   timeLeft: 0,
   totalElapsed: 0,
   intervalId: null,
@@ -739,7 +737,6 @@ function saveWorkout() {
         intervals: exercises.length,
         work: formSettings.work,
         rest: formSettings.rest,
-        cooldown: 0,
         prepTime: formSettings.prepTime,
         musicDisabled:     formMusicDisabled,
         musicName:         resolveName('work', old.musicName),
@@ -770,7 +767,6 @@ function saveWorkout() {
     intervals: exercises.length,
     work: formSettings.work,
     rest: formSettings.rest,
-    cooldown: 0,
     prepTime: formSettings.prepTime,
     musicDisabled:     formMusicDisabled,
     musicName:         formMusic.work.blob ? formMusic.work.blob.name : null,
@@ -870,7 +866,6 @@ function setCircleColor(phase) {
   const colors = {
     work: 'var(--work-color)',
     rest: 'var(--rest-color)',
-    cooldown: 'var(--cooldown-color)',
     prep: 'var(--prep-color)',
   };
   el.style.stroke = colors[phase] || 'var(--work-color)';
@@ -976,7 +971,6 @@ function beginPrep() {
 
 function startRound(roundIdx) {
   timer.currentRound = roundIdx;
-  timer.currentExIdx = 0;
   timer.paused = false;
 
   const workout = timer.workout;

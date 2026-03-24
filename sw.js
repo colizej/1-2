@@ -1,4 +1,4 @@
-const CACHE_NAME = 'odindva-v15';
+const CACHE_NAME = 'odindva-v16';
 const ASSETS = [
   './',
   './index.html',
@@ -11,7 +11,6 @@ const ASSETS = [
   './sounds/beep_end.m4a',
   './sounds/demo_work.m4a',
   './sounds/demo_relaxe.m4a',
-  './sounds/demo_fin.m4a',
 ];
 
 self.addEventListener('install', (e) => {

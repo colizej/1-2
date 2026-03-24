@@ -10,7 +10,6 @@
   --accent2: #ff6f84;
   --work-color: #7c6fff;
   --rest-color: #4ecdc4;
-  --cooldown-color: #ffd166;
   --prep-color: #ff8c42;
   --text: #f0f0f8;
   --text-muted: #888899;
@@ -519,7 +518,6 @@ html, body {
   transition: background 0.4s;
 }
 .phase-badge.rest { background: var(--rest-color); }
-.phase-badge.cooldown { background: var(--cooldown-color); color: #000; }
 .phase-badge.prep { background: var(--prep-color); }
 .phase-badge.idle { background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); }
 
