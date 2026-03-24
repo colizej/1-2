@@ -6,18 +6,55 @@ function getAudioCtx() {
   return audioCtx;
 }
 
+// AudioBuffers for beeps — decoded once, played via BufferSource for sample-accurate timing
+const _beepBuffers = {};
+
+async function loadBeepBuffers() {
+  const ctx = getAudioCtx();
+  const files = {
+    tick: 'sounds/beep_tick.m4a',
+    go:   'sounds/beep_go.m4a',
+    warn: 'sounds/beep_warn.m4a',
+    end:  'sounds/beep_end.m4a',
+  };
+  for (const [key, url] of Object.entries(files)) {
+    try {
+      const resp = await fetch(url);
+      const ab = await resp.arrayBuffer();
+      _beepBuffers[key] = await ctx.decodeAudioData(ab);
+    } catch (e) { console.warn('beep load failed:', key, e); }
+  }
+}
+
+function playBeepBuffer(key) {
+  const ctx = getAudioCtx();
+  const buf = _beepBuffers[key];
+  if (!buf) return;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const gain = ctx.createGain();
+  gain.gain.value = 0.85;
+  src.connect(gain);
+  gain.connect(ctx.destination);
+  src.start(ctx.currentTime);
+}
+
 function unlockAudioSync() {
   ensurePhaseAudio();
-  // Unlock all beep Audio elements synchronously within gesture
-  Object.values(_beepAudio).forEach(a => {
-    a.play().catch(() => {});
-    a.pause();
-    a.currentTime = 0;
+  const ctx = getAudioCtx();
+  // Unlock AudioContext with silent buffer (iOS requires sync play in gesture)
+  const buf = ctx.createBuffer(1, 1, 22050);
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(ctx.destination);
+  src.start(0);
+  ctx.resume().then(() => {
+    // Load beep buffers after AudioContext is running
+    loadBeepBuffers();
   });
 }
 
-// Pre-unlock AudioContext on first touchend/click anywhere on the page.
-// NOTE: iOS ignores touchstart for AudioContext unlock — must be touchend or click.
+// Pre-unlock on first touch anywhere
 ['touchend', 'click'].forEach(evt => {
   document.addEventListener(evt, function preUnlock() {
     unlockAudioSync();
@@ -25,47 +62,6 @@ function unlockAudioSync() {
     document.removeEventListener('click', preUnlock);
   }, { passive: true });
 });
-
-/**
- * Play a beep tone.
- * @param {number} freq   - Hz (e.g. 880)
- * @param {number} dur    - duration in seconds
- * @param {number} vol    - volume 0..1
- * @param {'sine'|'square'} type - wave type
- */
-function beep(freq = 880, dur = 0.12, vol = 0.6, type = 'sine') {
-  try {
-    const ctx = getAudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, ctx.currentTime);
-    gain.gain.setValueAtTime(vol, ctx.currentTime);
-    // Quick fade-out to avoid click
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + dur);
-  } catch (e) { /* audio not available */ }
-}
-
-// Beep sounds via <audio> files — guaranteed to work on iOS Safari
-// (AudioContext beeps fail on iOS; HTML5 Audio works once unlocked)
-const _beepAudio = {
-  tick: new Audio('sounds/beep_tick.m4a'),
-  go:   new Audio('sounds/beep_go.m4a'),
-  warn: new Audio('sounds/beep_warn.m4a'),
-  end:  new Audio('sounds/beep_end.m4a'),
-};
-Object.values(_beepAudio).forEach(a => { a.preload = 'auto'; a.volume = 0.85; });
-
-function playBeepFile(key) {
-  const a = _beepAudio[key];
-  if (!a) return;
-  a.currentTime = 0;
-  a.play().catch(() => {});
-}
 
 function flashTick() {
   const el = document.getElementById('tick-flash');
@@ -75,10 +71,10 @@ function flashTick() {
   el.classList.add('active');
 }
 
-function beepTick()  { flashTick(); playBeepFile('tick'); }
-function beepGo()    { playBeepFile('go'); }
-function beepWarn()  { playBeepFile('warn'); }
-function beepEnd()   { playBeepFile('end'); }
+function beepTick()  { flashTick(); playBeepBuffer('tick'); }
+function beepGo()    { playBeepBuffer('go'); }
+function beepWarn()  { playBeepBuffer('warn'); }
+function beepEnd()   { playBeepBuffer('end'); }
 
 /* ===== DEMO MUSIC INSTALL ===== */
 async function installDemoMusicIfNeeded() {
