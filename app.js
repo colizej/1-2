@@ -6,13 +6,10 @@ function getAudioCtx() {
   return audioCtx;
 }
 
-// iOS requires playing a silent buffer SYNCHRONOUSLY inside a click handler
-// to unlock AudioContext. async/await breaks this — the gesture is "over" after await.
 function unlockAudioSync() {
   const ctx = getAudioCtx();
   ensurePhaseAudio();
   if (ctx.state !== 'running') {
-    // Play a 1-sample silent buffer — this is the standard iOS unlock trick
     const buf = ctx.createBuffer(1, 1, 22050);
     const src = ctx.createBufferSource();
     src.buffer = buf;
@@ -21,6 +18,17 @@ function unlockAudioSync() {
     ctx.resume();
   }
 }
+
+// Pre-unlock AudioContext on the very first touch anywhere on the page.
+// By the time user navigates to the timer and taps Start, AudioContext is already warm.
+['touchstart', 'touchend', 'click'].forEach(evt => {
+  document.addEventListener(evt, function preUnlock() {
+    unlockAudioSync();
+    ['touchstart', 'touchend', 'click'].forEach(e =>
+      document.removeEventListener(e, preUnlock)
+    );
+  }, { once: false, passive: true });
+});
 
 /**
  * Play a beep tone.
@@ -46,8 +54,8 @@ function beep(freq = 880, dur = 0.12, vol = 0.6, type = 'sine') {
   } catch (e) { /* audio not available */ }
 }
 
-// Short tick: 3, 2, 1 countdown
-function beepTick()  { beep(880, 0.10, 0.55, 'sine'); }
+// Short tick: 3, 2, 1 countdown — longer+louder so it's audible on phone speakers
+function beepTick()  { beep(880, 0.22, 0.75, 'sine'); }
 // Long GO: start of interval
 function beepGo()    { beep(1100, 0.55, 0.7, 'sine'); }
 // End-warning: last 3 seconds of an interval
