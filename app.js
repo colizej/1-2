@@ -49,7 +49,6 @@ function playBeepBuffer(key) {
 let _ctxResumePromise = null;
 
 function unlockAudioSync() {
-  ensurePhaseAudio();
   const ctx = getAudioCtx();
   // Play silent buffer synchronously (iOS Safari requirement)
   const buf = ctx.createBuffer(1, 1, 22050);
