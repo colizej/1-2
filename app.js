@@ -557,8 +557,8 @@ function renderProgress() {
   cardsWrap.className = 'progress-cards';
   section.appendChild(cardsWrap);
 
-  // newest first — reverse a copy, keep original index for deletion
-  const reversed = history.map((item, idx) => ({ item, idx })).reverse().slice(0, 50);
+  // newest first — unshift ensures index 0 is always newest
+  const reversed = history.map((item, idx) => ({ item, idx })).slice(0, 50);
   reversed.forEach(({ item, idx: origIdx }, i) => {
     const d = new Date(item.date);
     const dayName = RU_DAYS[d.getDay()];
