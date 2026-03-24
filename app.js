@@ -605,10 +605,11 @@ function updateStepperDisplay() {
   document.getElementById('val-prepTime').textContent = formSettings.prepTime;
 }
 
-function addExercise(name = '', duration = null) {
+function addExercise(name = '', duration = null, rest = null) {
   const dur = (duration !== null && duration > 0) ? duration : formSettings.work;
+  const rst = (rest !== null && rest >= 0) ? rest : formSettings.rest;
   const idx = formExercises.length;
-  const ex = { id: Date.now() + idx, name, duration: dur };
+  const ex = { id: Date.now() + idx, name, duration: dur, rest: rst };
   formExercises.push(ex);
   formSettings.intervals++;
   updateStepperDisplay();
@@ -617,16 +618,27 @@ function addExercise(name = '', duration = null) {
   item.className = 'exercise-item';
   item.dataset.id = ex.id;
   item.innerHTML = `
-    <div class="exercise-num">${idx + 1}</div>
-    <input type="text" class="exercise-input" placeholder="Название подхода" value="${escHtml(name)}" />
-    <div class="exercise-dur">
-      <button class="ex-dur-btn ex-dur-minus">−</button>
-      <span class="ex-dur-val">${dur}</span><small class="ex-dur-unit">с</small>
-      <button class="ex-dur-btn ex-dur-plus">+</button>
+    <div class="ex-header">
+      <div class="exercise-num">${idx + 1}</div>
+      <input type="text" class="exercise-input" placeholder="Название подхода" value="${escHtml(name)}" />
+      <button class="btn-del-exercise" aria-label="Удалить">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
-    <button class="btn-del-exercise" aria-label="Удалить">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
+    <div class="ex-timings">
+      <div class="exercise-dur">
+        <small class="ex-dur-label">Работа</small>
+        <button class="ex-dur-btn ex-dur-minus">−</button>
+        <span class="ex-dur-val">${dur}</span><small class="ex-dur-unit">с</small>
+        <button class="ex-dur-btn ex-dur-plus">+</button>
+      </div>
+      <div class="exercise-dur">
+        <small class="ex-dur-label">Отдых</small>
+        <button class="ex-dur-btn ex-rest-minus">−</button>
+        <span class="ex-rest-val">${rst}</span><small class="ex-dur-unit">с</small>
+        <button class="ex-dur-btn ex-rest-plus">+</button>
+      </div>
+    </div>
   `;
 
   item.querySelector('.exercise-input').addEventListener('input', (e) => {
@@ -648,6 +660,24 @@ function addExercise(name = '', duration = null) {
     if (found) {
       found.duration = Math.min(300, found.duration + 5);
       item.querySelector('.ex-dur-val').textContent = found.duration;
+      vibrate([10]);
+    }
+  });
+
+  item.querySelector('.ex-rest-minus').addEventListener('click', () => {
+    const found = formExercises.find(x => x.id === ex.id);
+    if (found) {
+      found.rest = Math.max(0, found.rest - 5);
+      item.querySelector('.ex-rest-val').textContent = found.rest;
+      vibrate([10]);
+    }
+  });
+
+  item.querySelector('.ex-rest-plus').addEventListener('click', () => {
+    const found = formExercises.find(x => x.id === ex.id);
+    if (found) {
+      found.rest = Math.min(120, found.rest + 5);
+      item.querySelector('.ex-rest-val').textContent = found.rest;
       vibrate([10]);
     }
   });
