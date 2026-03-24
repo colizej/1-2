@@ -311,9 +311,6 @@ function openDetail(w) {
   detailWorkout = w;
   document.getElementById('detail-title').textContent = w.name;
   document.getElementById('detail-intervals').textContent = w.intervals;
-  document.getElementById('detail-work').textContent = fmtSec(w.work);
-  document.getElementById('detail-rest').textContent = fmtSec(w.rest);
-  document.getElementById('detail-cooldown').textContent = fmtSec(w.cooldown);
 
   const exList = document.getElementById('detail-exercises');
   exList.innerHTML = '';
@@ -336,7 +333,6 @@ function openDetail(w) {
   const tracks = [
     { label: 'Работа',  name: w.musicName },
     { label: 'Отдых',   name: w.musicNameRest },
-    { label: 'Заминка', name: w.musicNameCooldown },
   ].filter(t => t.name);
 
   if (w.musicDisabled) {
@@ -433,13 +429,12 @@ document.getElementById('btn-start-workout').addEventListener('click', () => {
 
 /* ===== EDIT WORKOUT ===== */
 function openEditScreen(w) {
-  formSettings = { intervals: 0, work: w.work, rest: w.rest, cooldown: w.cooldown, prepTime: w.prepTime || 3 };
+  formSettings = { intervals: 0, work: w.work || 30, rest: w.rest || 15, prepTime: w.prepTime || 3 };
   formExercises = [];
   resetFormMusic();
   formMusicDisabled = w.musicDisabled || false;
   setFormMusicUI('work',     w.musicName         || null);
   setFormMusicUI('rest',     w.musicNameRest     || null);
-  setFormMusicUI('cooldown', w.musicNameCooldown || null);
   updateMusicDisabledUI();
 
   document.getElementById('workout-name').value = w.name;
@@ -526,12 +521,11 @@ function deleteHistoryItem(idx) {
 }
 
 /* ===== CREATE WORKOUT ===== */
-let formSettings = { intervals: 5, work: 60, rest: 10, cooldown: 30, prepTime: 3 };
+let formSettings = { intervals: 0, work: 30, rest: 15, prepTime: 3 };
 let formExercises = [];
 const formMusic = {
   work:     { blob: null, action: null },
   rest:     { blob: null, action: null },
-  cooldown: { blob: null, action: null },
 };
 let formMusicDisabled = false;
 
@@ -543,7 +537,7 @@ function updateMusicDisabledUI() {
 }
 
 function resetFormMusic() {
-  ['work', 'rest', 'cooldown'].forEach(p => { formMusic[p] = { blob: null, action: null }; });
+  ['work', 'rest'].forEach(p => { formMusic[p] = { blob: null, action: null }; });
 }
 
 function setFormMusicUI(phase, name) {
@@ -566,8 +560,8 @@ function setFormMusicUI(phase, name) {
   }
 }
 
-// File pickers for all 3 phases
-['work', 'rest', 'cooldown'].forEach(phase => {
+// File pickers for work and rest phases
+['work', 'rest'].forEach(phase => {
   document.getElementById(`music-file-input-${phase}`).addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -584,14 +578,14 @@ function setFormMusicUI(phase, name) {
 });
 
 function openCreateScreen() {
-  formSettings = { intervals: 0, work: 60, rest: 10, cooldown: 30, prepTime: 3 };
+  formSettings = { intervals: 0, work: 30, rest: 15, prepTime: 3 };
   formExercises = [];
   resetFormMusic();
   formMusicDisabled = false;
   document.getElementById('workout-name').value = '';
   document.getElementById('exercises-list').innerHTML = '';
   document.getElementById('screen-create').dataset.editId = '';
-  ['work', 'rest', 'cooldown'].forEach(p => setFormMusicUI(p, null));
+  ['work', 'rest'].forEach(p => setFormMusicUI(p, null));
   updateMusicDisabledUI();
   updateStepperDisplay();
   showScreen('screen-create');
@@ -599,15 +593,13 @@ function openCreateScreen() {
 
 function updateStepperDisplay() {
   document.getElementById('val-intervals').textContent = formSettings.intervals;
-  document.getElementById('val-work').textContent = formSettings.work;
-  document.getElementById('val-rest').textContent = formSettings.rest;
-  document.getElementById('val-cooldown').textContent = formSettings.cooldown;
   document.getElementById('val-prepTime').textContent = formSettings.prepTime;
 }
 
 function addExercise(name = '', duration = null, rest = null) {
-  const dur = (duration !== null && duration > 0) ? duration : formSettings.work;
-  const rst = (rest !== null && rest >= 0) ? rest : formSettings.rest;
+  const lastEx = formExercises.length > 0 ? formExercises[formExercises.length - 1] : null;
+  const dur = (duration !== null && duration > 0) ? duration : (lastEx ? lastEx.duration : formSettings.work);
+  const rst = (rest !== null && rest >= 0) ? rest : (lastEx ? lastEx.rest : formSettings.rest);
   const idx = formExercises.length;
   const ex = { id: Date.now() + idx, name, duration: dur, rest: rst };
   formExercises.push(ex);
@@ -747,17 +739,16 @@ function saveWorkout() {
         intervals: exercises.length,
         work: formSettings.work,
         rest: formSettings.rest,
-        cooldown: formSettings.cooldown,
+        cooldown: 0,
         prepTime: formSettings.prepTime,
         musicDisabled:     formMusicDisabled,
-        musicName:         resolveName('work',     old.musicName),
-        musicNameRest:     resolveName('rest',     old.musicNameRest),
-        musicNameCooldown: resolveName('cooldown', old.musicNameCooldown),
+        musicName:         resolveName('work', old.musicName),
+        musicNameRest:     resolveName('rest', old.musicNameRest),
       };
       detailWorkout = state.workouts[idx];
 
       // Persist music blob changes per phase
-      ['work', 'rest', 'cooldown'].forEach(p => {
+      ['work', 'rest'].forEach(p => {
         const m = formMusic[p];
         if (m.action === 'set' && m.blob) saveMusicBlob(editId, p, m.blob);
         else if (m.action === 'remove')   deleteMusicBlob(editId, p);
@@ -779,17 +770,16 @@ function saveWorkout() {
     intervals: exercises.length,
     work: formSettings.work,
     rest: formSettings.rest,
-    cooldown: formSettings.cooldown,
+    cooldown: 0,
     prepTime: formSettings.prepTime,
     musicDisabled:     formMusicDisabled,
-    musicName:         formMusic.work.blob     ? formMusic.work.blob.name     : null,
-    musicNameRest:     formMusic.rest.blob     ? formMusic.rest.blob.name     : null,
-    musicNameCooldown: formMusic.cooldown.blob ? formMusic.cooldown.blob.name : null,
+    musicName:         formMusic.work.blob ? formMusic.work.blob.name : null,
+    musicNameRest:     formMusic.rest.blob ? formMusic.rest.blob.name : null,
     icon: icons[Math.floor(Math.random() * icons.length)],
     createdAt: new Date().toISOString(),
   };
 
-  ['work', 'rest', 'cooldown'].forEach(p => {
+  ['work', 'rest'].forEach(p => {
     if (formMusic[p].blob) saveMusicBlob(workout.id, p, formMusic[p].blob);
   });
 
@@ -948,7 +938,7 @@ function togglePause() {
 }
 
 function phaseSubLabel(phase) {
-  const labels = { work: 'работай!', rest: 'отдыхай', cooldown: 'заминка', prep: 'готовься' };
+  const labels = { work: 'работай!', rest: 'отдыхай', prep: 'готовься' };
   return labels[phase] || '';
 }
 
@@ -1044,8 +1034,7 @@ function renderTimer() {
     total = (workout.exercises[exIdx] && workout.exercises[exIdx].rest !== undefined)
       ? workout.exercises[exIdx].rest
       : workout.rest;
-  } else if (timer.phase === 'cooldown')  total = workout.cooldown;
-  else return;
+  } else return;
 
   const timeEl = document.getElementById('circle-time');
   timeEl.textContent = fmtSec(timer.timeLeft);
@@ -1089,8 +1078,6 @@ function onPhaseEnd() {
   } else if (timer.phase === 'rest') {
     stopPhaseMusic();
     afterRest();
-  } else if (timer.phase === 'cooldown') {
-    finishWorkout();
   }
 }
 
@@ -1099,20 +1086,7 @@ function afterRest() {
   const nextRound = timer.currentRound + 1;
 
   if (nextRound >= workout.intervals) {
-    // All rounds done → cooldown
-    if (workout.cooldown > 0) {
-      timer.phase = 'cooldown';
-      timer.timeLeft = workout.cooldown;
-      setCircleColor('cooldown');
-      updateExerciseLabel('Заминка', 'cooldown');
-      document.getElementById('timer-round-label').textContent = 'Заминка';
-      timer.log.push({ round: '—', exercise: 'Заминка', phase: 'cooldown', duration: workout.cooldown });
-      beepGo();
-      playPhaseMusic(workout.id, 'cooldown');
-      runTick();
-    } else {
-      finishWorkout();
-    }
+    finishWorkout();
   } else {
     startRound(nextRound);
   }
@@ -1218,8 +1192,8 @@ document.querySelectorAll('.step-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const target = btn.dataset.target;
     const dir = parseInt(btn.dataset.dir);
-  const mins = { intervals: 1, work: 5, rest: 0, cooldown: 0, prepTime: 3 };
-  const maxs = { intervals: 30, work: 300, rest: 120, cooldown: 120, prepTime: 30 };
+  const mins = { intervals: 1, prepTime: 3 };
+  const maxs = { intervals: 30, prepTime: 30 };
 
     formSettings[target] = Math.max(mins[target], Math.min(maxs[target], formSettings[target] + dir));
     updateStepperDisplay();
