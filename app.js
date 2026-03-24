@@ -153,77 +153,141 @@ function deleteAllMusicBlobs(workoutId) {
   ['work', 'rest', 'fin'].forEach(p => deleteMusicBlob(workoutId, p));
 }
 
-/* ===== MUSIC PLAYER ===== */
-// Single Audio element reused across all phases — keeps browser autoplay unlock
-// Created lazily on first user gesture so browser allows autoplay
-let _phaseAudio = null;
-let _phaseAudioUrl = null;
-let _phaseCurrentKey = null;          // key of the track currently loaded in audio element
-const _phaseSavedTimes = new Map();   // workoutId_phase → saved currentTime
+/* ===== MUSIC PLAYER (Web Audio API — gapless loop with auto-trim silence) ===== */
+let _musicSource = null;
+let _musicGainNode = null;
+const _musicBufferCache = new Map();  // key → AudioBuffer
+const _phaseSavedTimes = new Map();   // key → saved playback offset (seconds)
+let _phaseCurrentKey = null;
+let _musicCtxTimeAtStart = 0;
+let _musicOffsetAtStart = 0;
 
-function ensurePhaseAudio() {
-  if (!_phaseAudio) {
-    _phaseAudio = new Audio();
-    _phaseAudio.loop = true;
-    _phaseAudio.volume = 0.6;
+// Find last non-silent sample → use as loopEnd to skip trailing silence
+function _calcLoopEnd(buffer) {
+  const data = buffer.getChannelData(0);
+  const thresh = 0.001;
+  let last = data.length - 1;
+  while (last > 0 && Math.abs(data[last]) < thresh) last--;
+  return (last + 1) / buffer.sampleRate;
+}
+
+function _getMusicGain() {
+  if (!_musicGainNode) {
+    const ctx = getAudioCtx();
+    _musicGainNode = ctx.createGain();
+    _musicGainNode.gain.value = 0.6;
+    _musicGainNode.connect(ctx.destination);
   }
-  return _phaseAudio;
+  return _musicGainNode;
+}
+
+async function _loadMusicBuffer(workoutId, phase) {
+  const key = `${workoutId}_${phase}`;
+  if (_musicBufferCache.has(key)) return { buffer: _musicBufferCache.get(key), key };
+  let blob = await loadMusicBlob(workoutId, phase);
+  if (!blob) blob = await loadMusicBlob('_demo', phase);
+  if (!blob) return null;
+  const ctx = getAudioCtx();
+  const arrayBuf = await blob.arrayBuffer();
+  const buffer = await ctx.decodeAudioData(arrayBuf);
+  _musicBufferCache.set(key, buffer);
+  return { buffer, key };
+}
+
+function _currentMusicPosition() {
+  if (!_phaseCurrentKey || !_musicSource) return 0;
+  const ctx = getAudioCtx();
+  const buf = _musicBufferCache.get(_phaseCurrentKey);
+  const loopEnd = buf ? _calcLoopEnd(buf) : 1;
+  return (_musicOffsetAtStart + (ctx.currentTime - _musicCtxTimeAtStart)) % loopEnd;
 }
 
 async function playPhaseMusic(workoutId, phase) {
-  // Check workout-level music-disabled flag
   const _wl = JSON.parse(localStorage.getItem('odindva_workouts') || '[]');
   const _ww = _wl.find(x => String(x.id) === String(workoutId));
   if (_ww && _ww.musicDisabled) return;
-  let blob = await loadMusicBlob(workoutId, phase);
-  if (!blob) blob = await loadMusicBlob('_demo', phase); // fallback to demo
-  if (!blob) return;
 
   const key = `${workoutId}_${phase}`;
-  const audio = ensurePhaseAudio();
 
-  // Same phase already loaded — just resume from current position
-  if (_phaseCurrentKey === key && audio.src) {
-    audio.play().catch(() => {});
-    return;
+  // Same phase already playing — nothing to do
+  if (_phaseCurrentKey === key && _musicSource) return;
+
+  // Save position of outgoing phase
+  if (_phaseCurrentKey && _musicSource) {
+    _phaseSavedTimes.set(_phaseCurrentKey, _currentMusicPosition());
   }
 
-  // Save position of the outgoing phase before switching
-  if (_phaseCurrentKey && audio.src) {
-    _phaseSavedTimes.set(_phaseCurrentKey, audio.currentTime);
+  // Stop current source
+  if (_musicSource) {
+    _musicSource.onended = null;
+    try { _musicSource.stop(); } catch(e) {}
+    _musicSource = null;
   }
 
-  audio.pause();
-  if (_phaseAudioUrl) {
-    URL.revokeObjectURL(_phaseAudioUrl);
-    _phaseAudioUrl = null;
-  }
-  _phaseAudioUrl = URL.createObjectURL(blob);
+  const result = await _loadMusicBuffer(workoutId, phase);
+  if (!result) return;
+  const { buffer } = result;
+
+  const ctx = getAudioCtx();
+  if (ctx.state === 'suspended') await ctx.resume();
+
+  const loopEnd = _calcLoopEnd(buffer);
+  const offset = (_phaseSavedTimes.get(key) || 0) % loopEnd;
+
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  source.loop = true;
+  source.loopStart = 0;
+  source.loopEnd = loopEnd;
+  source.connect(_getMusicGain());
+
+  _musicSource = source;
   _phaseCurrentKey = key;
-  audio.src = _phaseAudioUrl;
-  audio.currentTime = _phaseSavedTimes.get(key) || 0;
-  audio.play().catch(() => {});
+  _musicOffsetAtStart = offset;
+  _musicCtxTimeAtStart = ctx.currentTime;
+  source.start(0, offset);
 }
 
 function stopPhaseMusic() {
-  if (!_phaseAudio) return;
-  _phaseAudio.pause();
-  _phaseAudio.currentTime = 0;
-  if (_phaseAudioUrl) {
-    URL.revokeObjectURL(_phaseAudioUrl);
-    _phaseAudioUrl = null;
+  if (_musicSource) {
+    _musicSource.onended = null;
+    try { _musicSource.stop(); } catch(e) {}
+    _musicSource = null;
   }
-  _phaseAudio.src = '';
   _phaseCurrentKey = null;
   _phaseSavedTimes.clear();
+  _musicBufferCache.clear();
+  _musicOffsetAtStart = 0;
+  _musicCtxTimeAtStart = 0;
 }
 
 function pausePhaseMusic() {
-  if (_phaseAudio && !_phaseAudio.paused) _phaseAudio.pause();
+  if (!_musicSource || !_phaseCurrentKey) return;
+  _phaseSavedTimes.set(_phaseCurrentKey, _currentMusicPosition());
+  _musicSource.onended = null;
+  try { _musicSource.stop(); } catch(e) {}
+  _musicSource = null;
 }
 
 function resumePhaseMusic() {
-  if (_phaseAudio && _phaseAudio.paused && _phaseAudio.src) _phaseAudio.play().catch(() => {});
+  if (!_phaseCurrentKey) return;
+  const buf = _musicBufferCache.get(_phaseCurrentKey);
+  if (!buf) return;
+  const ctx = getAudioCtx();
+  const loopEnd = _calcLoopEnd(buf);
+  const offset = (_phaseSavedTimes.get(_phaseCurrentKey) || 0) % loopEnd;
+
+  const source = ctx.createBufferSource();
+  source.buffer = buf;
+  source.loop = true;
+  source.loopStart = 0;
+  source.loopEnd = loopEnd;
+  source.connect(_getMusicGain());
+
+  _musicSource = source;
+  _musicOffsetAtStart = offset;
+  _musicCtxTimeAtStart = ctx.currentTime;
+  source.start(0, offset);
 }
 
 /* ===== APP STATE ===== */
