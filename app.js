@@ -6,10 +6,20 @@ function getAudioCtx() {
   return audioCtx;
 }
 
-async function unlockAudio() {
+// iOS requires playing a silent buffer SYNCHRONOUSLY inside a click handler
+// to unlock AudioContext. async/await breaks this — the gesture is "over" after await.
+function unlockAudioSync() {
   const ctx = getAudioCtx();
   ensurePhaseAudio();
-  if (ctx.state === 'suspended') await ctx.resume();
+  if (ctx.state !== 'running') {
+    // Play a 1-sample silent buffer — this is the standard iOS unlock trick
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+    ctx.resume();
+  }
 }
 
 /**
@@ -846,9 +856,9 @@ function tickTime() {
 // Main tap handler
 document.getElementById('circle-tap').addEventListener('click', handleTap);
 
-async function handleTap() {
-  // Unlock AudioContext and Audio element, await so iOS context is truly running
-  await unlockAudio();
+function handleTap() {
+  // Unlock AudioContext synchronously within the click gesture (iOS Safari requirement)
+  unlockAudioSync();
   if (timer.phase === 'idle') {
     beginPrep();
   } else if (timer.phase === 'done') {
