@@ -1250,6 +1250,14 @@ html, body {
   justify-content: center;
   margin-top: 4px;
 }
+.sheet-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 4px 20px 8px;
+}
 
 /* ===== PROGRESS SECTION ===== */
 .progress-section { margin-top: 24px; }

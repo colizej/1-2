@@ -1317,6 +1317,83 @@ document.querySelectorAll('.step-btn').forEach(btn => {
   });
 });
 
+/* ===== SETTINGS SHEET ===== */
+function openSettingsSheet() {
+  const overlay = document.getElementById('settings-overlay');
+  const sheet = document.getElementById('settings-sheet');
+  overlay.style.display = 'flex';
+  void sheet.offsetWidth;
+  sheet.classList.add('sheet-open');
+}
+
+function closeSettingsSheet() {
+  const sheet = document.getElementById('settings-sheet');
+  const overlay = document.getElementById('settings-overlay');
+  sheet.classList.remove('sheet-open');
+  setTimeout(() => { overlay.style.display = 'none'; }, 300);
+}
+
+function exportWorkouts() {
+  const workouts = JSON.parse(localStorage.getItem('odindva_workouts') || '[]');
+  if (workouts.length === 0) {
+    showConfirm('Нет тренировок для экспорта', () => {});
+    return;
+  }
+  const data = {
+    version: 1,
+    exported: new Date().toISOString(),
+    workouts,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `odindva-workouts-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  closeSettingsSheet();
+}
+
+function importWorkouts(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.workouts || !Array.isArray(data.workouts)) throw new Error('bad format');
+      const incoming = data.workouts;
+      const existing = JSON.parse(localStorage.getItem('odindva_workouts') || '[]');
+      // Merge: skip duplicates by id
+      const existingIds = new Set(existing.map(w => String(w.id)));
+      const newOnes = incoming.filter(w => !existingIds.has(String(w.id)));
+      const merged = [...newOnes, ...existing];
+      localStorage.setItem('odindva_workouts', JSON.stringify(merged));
+      state.workouts = merged;
+      renderHome();
+      closeSettingsSheet();
+      vibrate([30, 30, 30]);
+    } catch (err) {
+      showConfirm('Ошибка: неверный формат файла', () => {});
+    }
+  };
+  reader.readAsText(file);
+}
+
+document.getElementById('btn-open-settings').addEventListener('click', openSettingsSheet);
+document.getElementById('settings-cancel').addEventListener('click', closeSettingsSheet);
+document.getElementById('settings-overlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('settings-overlay')) closeSettingsSheet();
+});
+document.getElementById('settings-export').addEventListener('click', exportWorkouts);
+document.getElementById('settings-import').addEventListener('click', () => {
+  document.getElementById('settings-import-file').click();
+});
+document.getElementById('settings-import-file').addEventListener('change', (e) => {
+  importWorkouts(e.target.files[0]);
+  e.target.value = '';
+});
+
 /* ===== WIRE UP BUTTONS ===== */
 document.getElementById('btn-open-create').addEventListener('click', openCreateScreen);
 document.getElementById('btn-back-create').addEventListener('click', () => {
