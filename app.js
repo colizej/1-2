@@ -630,7 +630,7 @@ function addExercise(name = '', duration = null, rest = null) {
         <span class="ex-dur-label">Работа</span>
         <div class="exercise-dur">
           <button class="ex-dur-btn ex-dur-minus">−</button>
-          <span class="ex-dur-val">${dur}</span><small class="ex-dur-unit"> с</small>
+          <span class="ex-dur-val">${dur}</span>
           <button class="ex-dur-btn ex-dur-plus">+</button>
         </div>
       </div>
@@ -638,7 +638,7 @@ function addExercise(name = '', duration = null, rest = null) {
         <span class="ex-dur-label">Отдых</span>
         <div class="exercise-dur">
           <button class="ex-dur-btn ex-rest-minus">−</button>
-          <span class="ex-rest-val">${rst}</span><small class="ex-dur-unit"> с</small>
+          <span class="ex-rest-val">${rst}</span>
           <button class="ex-dur-btn ex-rest-plus">+</button>
         </div>
       </div>

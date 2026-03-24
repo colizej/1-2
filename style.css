@@ -409,11 +409,6 @@ html, body {
   min-width: 32px;
   text-align: center;
 }
-.ex-dur-unit {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-left: -8px;
-}
 
 /* ===== TIMER SETTINGS ===== */
 .timer-settings {
@@ -441,7 +436,6 @@ html, body {
 }
 
 .stepper span { font-size: 18px; font-weight: 700; min-width: 32px; text-align: center; }
-.stepper small { font-size: 11px; color: var(--text-muted); margin-left: -8px; }
 
 .step-btn {
   width: 34px;
