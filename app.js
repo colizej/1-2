@@ -158,6 +158,8 @@ function deleteAllMusicBlobs(workoutId) {
 // Created lazily on first user gesture so browser allows autoplay
 let _phaseAudio = null;
 let _phaseAudioUrl = null;
+let _phaseCurrentKey = null;          // key of the track currently loaded in audio element
+const _phaseSavedTimes = new Map();   // workoutId_phase → saved currentTime
 
 function ensurePhaseAudio() {
   if (!_phaseAudio) {
@@ -176,15 +178,30 @@ async function playPhaseMusic(workoutId, phase) {
   let blob = await loadMusicBlob(workoutId, phase);
   if (!blob) blob = await loadMusicBlob('_demo', phase); // fallback to demo
   if (!blob) return;
+
+  const key = `${workoutId}_${phase}`;
   const audio = ensurePhaseAudio();
+
+  // Same phase already loaded — just resume from current position
+  if (_phaseCurrentKey === key && audio.src) {
+    audio.play().catch(() => {});
+    return;
+  }
+
+  // Save position of the outgoing phase before switching
+  if (_phaseCurrentKey && audio.src) {
+    _phaseSavedTimes.set(_phaseCurrentKey, audio.currentTime);
+  }
+
   audio.pause();
   if (_phaseAudioUrl) {
     URL.revokeObjectURL(_phaseAudioUrl);
     _phaseAudioUrl = null;
   }
   _phaseAudioUrl = URL.createObjectURL(blob);
+  _phaseCurrentKey = key;
   audio.src = _phaseAudioUrl;
-  audio.currentTime = 0;
+  audio.currentTime = _phaseSavedTimes.get(key) || 0;
   audio.play().catch(() => {});
 }
 
@@ -197,6 +214,8 @@ function stopPhaseMusic() {
     _phaseAudioUrl = null;
   }
   _phaseAudio.src = '';
+  _phaseCurrentKey = null;
+  _phaseSavedTimes.clear();
 }
 
 function pausePhaseMusic() {
