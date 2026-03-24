@@ -1217,7 +1217,6 @@ function showResults() {
   const workout = timer.workout;
 
   document.getElementById('results-subtitle').textContent = workout.name;
-  document.getElementById('res-rounds').textContent = workout.intervals;
   document.getElementById('res-time').textContent = fmtMin(timer.totalElapsed);
   document.getElementById('res-exercises').textContent = workout.exercises.length;
 
