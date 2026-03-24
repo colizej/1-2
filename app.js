@@ -445,7 +445,7 @@ function openEditScreen(w) {
   document.getElementById('workout-name').value = w.name;
   document.getElementById('exercises-list').innerHTML = '';
   // Use addExercise to populate rows (handles duration controls + formExercises sync)
-  w.exercises.forEach(ex => addExercise(ex.name, ex.duration || w.work));
+  w.exercises.forEach(ex => addExercise(ex.name, ex.duration || w.work, ex.rest !== undefined ? ex.rest : w.rest));
 
   updateStepperDisplay();
   // Mark as editing
@@ -685,6 +685,7 @@ function saveWorkout() {
     id: i + 1,
     name: inp.value.trim() || `Подход ${i + 1}`,
     duration: formExercises[i] ? formExercises[i].duration : formSettings.work,
+    rest: formExercises[i] !== undefined ? formExercises[i].rest : formSettings.rest,
   }));
 
   if (exercises.length === 0) {
@@ -1004,8 +1005,12 @@ function renderTimer() {
   if (timer.phase === 'work') {
     const exIdx = timer.currentExIdx || 0;
     total = (workout.exercises[exIdx] && workout.exercises[exIdx].duration) || workout.work;
-  } else if (timer.phase === 'rest')  total = workout.rest;
-  else if (timer.phase === 'cooldown') total = workout.cooldown;
+  } else if (timer.phase === 'rest') {
+    const exIdx = timer.currentExIdx || 0;
+    total = (workout.exercises[exIdx] && workout.exercises[exIdx].rest !== undefined)
+      ? workout.exercises[exIdx].rest
+      : workout.rest;
+  } else if (timer.phase === 'cooldown')  total = workout.cooldown;
   else return;
 
   const timeEl = document.getElementById('circle-time');
@@ -1031,12 +1036,15 @@ function onPhaseEnd() {
 
   if (timer.phase === 'work') {
     // Was working → go to rest
-    if (workout.rest > 0) {
+    const exRest = (workout.exercises[timer.currentExIdx] && workout.exercises[timer.currentExIdx].rest !== undefined)
+      ? workout.exercises[timer.currentExIdx].rest
+      : workout.rest;
+    if (exRest > 0) {
       timer.phase = 'rest';
-      timer.timeLeft = workout.rest;
+      timer.timeLeft = exRest;
       setCircleColor('rest');
       updateExerciseLabel(workout.exercises[timer.currentExIdx].name, 'rest');
-      timer.log.push({ round: timer.currentRound + 1, exercise: 'Отдых', phase: 'rest', duration: workout.rest });
+      timer.log.push({ round: timer.currentRound + 1, exercise: 'Отдых', phase: 'rest', duration: exRest });
       beepGo();
       playPhaseMusic(workout.id, 'rest');
       runTick();
