@@ -383,6 +383,8 @@ html, body {
   align-items: center;
   gap: 14px;
   flex-shrink: 0;
+  min-width: 130px;
+  justify-content: flex-end;
 }
 .ex-dur-btn {
   width: 34px;
@@ -402,7 +404,8 @@ html, body {
   flex-shrink: 0;
 }
 .ex-dur-btn:active { transform: scale(0.88); background: var(--accent); }
-.ex-dur-val {
+.ex-dur-val,
+.ex-rest-val {
   font-size: 18px;
   font-weight: 700;
   color: var(--text);
