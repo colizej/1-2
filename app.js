@@ -626,17 +626,21 @@ function addExercise(name = '', duration = null, rest = null) {
       </button>
     </div>
     <div class="ex-timings">
-      <div class="exercise-dur">
-        <small class="ex-dur-label">Работа</small>
-        <button class="ex-dur-btn ex-dur-minus">−</button>
-        <span class="ex-dur-val">${dur}</span><small class="ex-dur-unit">с</small>
-        <button class="ex-dur-btn ex-dur-plus">+</button>
+      <div class="ex-timing-row">
+        <span class="ex-dur-label">Работа</span>
+        <div class="exercise-dur">
+          <button class="ex-dur-btn ex-dur-minus">−</button>
+          <span class="ex-dur-val">${dur}</span><small class="ex-dur-unit"> с</small>
+          <button class="ex-dur-btn ex-dur-plus">+</button>
+        </div>
       </div>
-      <div class="exercise-dur">
-        <small class="ex-dur-label">Отдых</small>
-        <button class="ex-dur-btn ex-rest-minus">−</button>
-        <span class="ex-rest-val">${rst}</span><small class="ex-dur-unit">с</small>
-        <button class="ex-dur-btn ex-rest-plus">+</button>
+      <div class="ex-timing-row">
+        <span class="ex-dur-label">Отдых</span>
+        <div class="exercise-dur">
+          <button class="ex-dur-btn ex-rest-minus">−</button>
+          <span class="ex-rest-val">${rst}</span><small class="ex-dur-unit"> с</small>
+          <button class="ex-dur-btn ex-rest-plus">+</button>
+        </div>
       </div>
     </div>
   `;

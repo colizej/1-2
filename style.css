@@ -320,16 +320,28 @@ html, body {
 
 .ex-timings {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 0;
   padding-left: 38px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
 }
 
+.ex-timing-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+}
+
+.ex-timing-row:last-child { border-bottom: none; }
+
 .ex-dur-label {
-  font-size: 10px;
+  font-size: 14px;
   color: var(--text-muted);
-  margin-right: 2px;
-  flex-shrink: 0;
+  flex: 1;
 }
 
 .exercise-num {
@@ -369,33 +381,38 @@ html, body {
 .exercise-dur {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 14px;
   flex-shrink: 0;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 2px 4px;
 }
 .ex-dur-btn {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-size: 16px;
-  line-height: 1;
-  padding: 2px 6px;
+  width: 34px;
+  height: 34px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  font-weight: 300;
+  line-height: 1;
   flex-shrink: 0;
 }
+.ex-dur-btn:active { transform: scale(0.88); background: var(--accent); }
 .ex-dur-val {
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text);
-  min-width: 24px;
+  min-width: 32px;
   text-align: center;
 }
 .ex-dur-unit {
   font-size: 11px;
   color: var(--text-muted);
+  margin-left: -8px;
 }
 
 /* ===== TIMER SETTINGS ===== */
