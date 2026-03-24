@@ -320,7 +320,8 @@ function openDetail(w) {
   w.exercises.forEach((ex, i) => {
     const row = document.createElement('div');
     row.className = 'detail-exercise-row';
-    row.innerHTML = `<span class="detail-ex-num">${i + 1}</span><span class="detail-ex-name">${escHtml(ex.name)}</span>`;
+    const dur = ex.duration || w.work;
+    row.innerHTML = `<span class="detail-ex-num">${i + 1}</span><span class="detail-ex-name">${escHtml(ex.name)}</span><span class="detail-ex-dur">${fmtSec(dur)}</span>`;
     exList.appendChild(row);
   });
 
@@ -432,8 +433,8 @@ document.getElementById('btn-start-workout').addEventListener('click', () => {
 
 /* ===== EDIT WORKOUT ===== */
 function openEditScreen(w) {
-  formSettings = { intervals: w.intervals, work: w.work, rest: w.rest, cooldown: w.cooldown };
-  formExercises = w.exercises.map(e => ({ ...e }));
+  formSettings = { intervals: 0, work: w.work, rest: w.rest, cooldown: w.cooldown, prepTime: w.prepTime || 3 };
+  formExercises = [];
   resetFormMusic();
   formMusicDisabled = w.musicDisabled || false;
   setFormMusicUI('work',     w.musicName         || null);
@@ -443,33 +444,8 @@ function openEditScreen(w) {
 
   document.getElementById('workout-name').value = w.name;
   document.getElementById('exercises-list').innerHTML = '';
-  // Populate exercises without re-counting intervals (already set)
-  formExercises.forEach(ex => {
-    const idx = document.querySelectorAll('#exercises-list .exercise-item').length;
-    const item = document.createElement('div');
-    item.className = 'exercise-item';
-    item.dataset.id = ex.id;
-    item.innerHTML = `
-      <div class="exercise-num">${idx + 1}</div>
-      <input type="text" class="exercise-input" placeholder="Название подхода" value="${escHtml(ex.name)}" />
-      <button class="btn-del-exercise" aria-label="Удалить">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    `;
-    item.querySelector('.exercise-input').addEventListener('input', (e) => {
-      const found = formExercises.find(x => x.id === ex.id);
-      if (found) found.name = e.target.value;
-    });
-    item.querySelector('.btn-del-exercise').addEventListener('click', () => {
-      formExercises = formExercises.filter(x => x.id !== ex.id);
-      formSettings.intervals = Math.max(0, formSettings.intervals - 1);
-      updateStepperDisplay();
-      item.style.transform = 'translateX(-20px)';
-      item.style.opacity = '0';
-      setTimeout(() => { item.remove(); rebuildExerciseNums(); }, 250);
-    });
-    document.getElementById('exercises-list').appendChild(item);
-  });
+  // Use addExercise to populate rows (handles duration controls + formExercises sync)
+  w.exercises.forEach(ex => addExercise(ex.name, ex.duration || w.work));
 
   updateStepperDisplay();
   // Mark as editing
@@ -550,7 +526,7 @@ function deleteHistoryItem(idx) {
 }
 
 /* ===== CREATE WORKOUT ===== */
-let formSettings = { intervals: 5, work: 60, rest: 10, cooldown: 30 };
+let formSettings = { intervals: 5, work: 60, rest: 10, cooldown: 30, prepTime: 3 };
 let formExercises = [];
 const formMusic = {
   work:     { blob: null, action: null },
@@ -608,7 +584,7 @@ function setFormMusicUI(phase, name) {
 });
 
 function openCreateScreen() {
-  formSettings = { intervals: 0, work: 60, rest: 10, cooldown: 30 };
+  formSettings = { intervals: 0, work: 60, rest: 10, cooldown: 30, prepTime: 3 };
   formExercises = [];
   resetFormMusic();
   formMusicDisabled = false;
@@ -626,11 +602,13 @@ function updateStepperDisplay() {
   document.getElementById('val-work').textContent = formSettings.work;
   document.getElementById('val-rest').textContent = formSettings.rest;
   document.getElementById('val-cooldown').textContent = formSettings.cooldown;
+  document.getElementById('val-prepTime').textContent = formSettings.prepTime;
 }
 
-function addExercise(name = '') {
+function addExercise(name = '', duration = null) {
+  const dur = (duration !== null && duration > 0) ? duration : formSettings.work;
   const idx = formExercises.length;
-  const ex = { id: Date.now() + idx, name };
+  const ex = { id: Date.now() + idx, name, duration: dur };
   formExercises.push(ex);
   formSettings.intervals++;
   updateStepperDisplay();
@@ -641,6 +619,11 @@ function addExercise(name = '') {
   item.innerHTML = `
     <div class="exercise-num">${idx + 1}</div>
     <input type="text" class="exercise-input" placeholder="Название подхода" value="${escHtml(name)}" />
+    <div class="exercise-dur">
+      <button class="ex-dur-btn ex-dur-minus">−</button>
+      <span class="ex-dur-val">${dur}</span><small class="ex-dur-unit">с</small>
+      <button class="ex-dur-btn ex-dur-plus">+</button>
+    </div>
     <button class="btn-del-exercise" aria-label="Удалить">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
@@ -649,6 +632,24 @@ function addExercise(name = '') {
   item.querySelector('.exercise-input').addEventListener('input', (e) => {
     const found = formExercises.find(x => x.id === ex.id);
     if (found) found.name = e.target.value;
+  });
+
+  item.querySelector('.ex-dur-minus').addEventListener('click', () => {
+    const found = formExercises.find(x => x.id === ex.id);
+    if (found) {
+      found.duration = Math.max(5, found.duration - 5);
+      item.querySelector('.ex-dur-val').textContent = found.duration;
+      vibrate([10]);
+    }
+  });
+
+  item.querySelector('.ex-dur-plus').addEventListener('click', () => {
+    const found = formExercises.find(x => x.id === ex.id);
+    if (found) {
+      found.duration = Math.min(300, found.duration + 5);
+      item.querySelector('.ex-dur-val').textContent = found.duration;
+      vibrate([10]);
+    }
   });
 
   item.querySelector('.btn-del-exercise').addEventListener('click', () => {
@@ -683,6 +684,7 @@ function saveWorkout() {
   const exercises = Array.from(inputs).map((inp, i) => ({
     id: i + 1,
     name: inp.value.trim() || `Подход ${i + 1}`,
+    duration: formExercises[i] ? formExercises[i].duration : formSettings.work,
   }));
 
   if (exercises.length === 0) {
@@ -711,6 +713,7 @@ function saveWorkout() {
         work: formSettings.work,
         rest: formSettings.rest,
         cooldown: formSettings.cooldown,
+        prepTime: formSettings.prepTime,
         musicDisabled:     formMusicDisabled,
         musicName:         resolveName('work',     old.musicName),
         musicNameRest:     resolveName('rest',     old.musicNameRest),
@@ -742,6 +745,7 @@ function saveWorkout() {
     work: formSettings.work,
     rest: formSettings.rest,
     cooldown: formSettings.cooldown,
+    prepTime: formSettings.prepTime,
     musicDisabled:     formMusicDisabled,
     musicName:         formMusic.work.blob     ? formMusic.work.blob.name     : null,
     musicNameRest:     formMusic.rest.blob     ? formMusic.rest.blob.name     : null,
@@ -924,10 +928,11 @@ function beginPrep() {
   overlay.style.display = 'flex';
   setCircleColor('prep');
 
-  let count = 3;
+  const prepTime = timer.workout.prepTime || 3;
+  let count = prepTime;
   countEl.textContent = count;
-  beepTick();
-  vibrate([30]);
+  // Beep only in last 3 seconds
+  if (count <= 3) { beepTick(); vibrate([30]); } else { vibrate([10]); }
 
   const pid = setInterval(() => {
     count--;
@@ -939,8 +944,7 @@ function beginPrep() {
       startRound(0);
     } else {
       countEl.textContent = count;
-      beepTick();
-      vibrate([30]);
+      if (count <= 3) { beepTick(); vibrate([30]); } else { vibrate([10]); }
     }
   }, 1000);
 }
@@ -964,8 +968,9 @@ function startRound(roundIdx) {
   document.getElementById('circle-pulse').classList.add('beat');
 
   timer.phase = 'work';
-  timer.timeLeft = workout.work;
-  timer.log.push({ round: roundIdx + 1, exercise: workout.exercises[exIdx].name, phase: 'work', duration: workout.work });
+  const exDur = (workout.exercises[exIdx] && workout.exercises[exIdx].duration) || workout.work;
+  timer.timeLeft = exDur;
+  timer.log.push({ round: roundIdx + 1, exercise: workout.exercises[exIdx].name, phase: 'work', duration: exDur });
 
   vibrate([50, 30, 50]);
   beepGo();
@@ -996,8 +1001,10 @@ function runTick() {
 function renderTimer() {
   const workout = timer.workout;
   let total;
-  if (timer.phase === 'work')     total = workout.work;
-  else if (timer.phase === 'rest')  total = workout.rest;
+  if (timer.phase === 'work') {
+    const exIdx = timer.currentExIdx || 0;
+    total = (workout.exercises[exIdx] && workout.exercises[exIdx].duration) || workout.work;
+  } else if (timer.phase === 'rest')  total = workout.rest;
   else if (timer.phase === 'cooldown') total = workout.cooldown;
   else return;
 
@@ -1169,8 +1176,8 @@ document.querySelectorAll('.step-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const target = btn.dataset.target;
     const dir = parseInt(btn.dataset.dir);
-    const mins = { intervals: 1, work: 5, rest: 0, cooldown: 0 };
-    const maxs = { intervals: 30, work: 300, rest: 120, cooldown: 120 };
+  const mins = { intervals: 1, work: 5, rest: 0, cooldown: 0, prepTime: 3 };
+  const maxs = { intervals: 30, work: 300, rest: 120, cooldown: 120, prepTime: 30 };
 
     formSettings[target] = Math.max(mins[target], Math.min(maxs[target], formSettings[target] + dir));
     updateStepperDisplay();
