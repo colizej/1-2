@@ -19,15 +19,14 @@ function unlockAudioSync() {
   }
 }
 
-// Pre-unlock AudioContext on the very first touch anywhere on the page.
-// By the time user navigates to the timer and taps Start, AudioContext is already warm.
-['touchstart', 'touchend', 'click'].forEach(evt => {
+// Pre-unlock AudioContext on first touchend/click anywhere on the page.
+// NOTE: iOS ignores touchstart for AudioContext unlock — must be touchend or click.
+['touchend', 'click'].forEach(evt => {
   document.addEventListener(evt, function preUnlock() {
     unlockAudioSync();
-    ['touchstart', 'touchend', 'click'].forEach(e =>
-      document.removeEventListener(e, preUnlock)
-    );
-  }, { once: false, passive: true });
+    document.removeEventListener('touchend', preUnlock);
+    document.removeEventListener('click', preUnlock);
+  }, { passive: true });
 });
 
 /**
@@ -865,10 +864,12 @@ function tickTime() {
 document.getElementById('circle-tap').addEventListener('click', handleTap);
 
 function handleTap() {
-  // Unlock AudioContext synchronously within the click gesture (iOS Safari requirement)
+  // Unlock AudioContext synchronously within the click gesture
   unlockAudioSync();
   if (timer.phase === 'idle') {
-    beginPrep();
+    // 100ms delay: gives AudioContext.resume() time to resolve before first beepTick
+    // Imperceptible to the user but required on iOS Safari
+    setTimeout(beginPrep, 100);
   } else if (timer.phase === 'done') {
     // do nothing, results screen handles it
   } else {
