@@ -3,9 +3,13 @@ let audioCtx = null;
 
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  // Resume if suspended (iOS requires user gesture first)
-  if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
+}
+
+async function unlockAudio() {
+  const ctx = getAudioCtx();
+  ensurePhaseAudio();
+  if (ctx.state === 'suspended') await ctx.resume();
 }
 
 /**
@@ -842,10 +846,9 @@ function tickTime() {
 // Main tap handler
 document.getElementById('circle-tap').addEventListener('click', handleTap);
 
-function handleTap() {
-  // Unlock AudioContext and Audio element on first user gesture
-  getAudioCtx();
-  ensurePhaseAudio();
+async function handleTap() {
+  // Unlock AudioContext and Audio element, await so iOS context is truly running
+  await unlockAudio();
   if (timer.phase === 'idle') {
     beginPrep();
   } else if (timer.phase === 'done') {
