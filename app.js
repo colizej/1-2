@@ -1156,11 +1156,9 @@ function onPhaseEnd() {
       playPhaseMusic(workout.id, 'rest');
       runTick();
     } else {
-      stopPhaseMusic();
       afterRest();
     }
   } else if (timer.phase === 'rest') {
-    stopPhaseMusic();
     afterRest();
   }
 }
