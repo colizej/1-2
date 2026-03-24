@@ -7,9 +7,13 @@ function getAudioCtx() {
 }
 
 // AudioBuffers for beeps — decoded once, played via BufferSource for sample-accurate timing
+// fetch + decodeAudioData do NOT require a user gesture — load immediately at page start
 const _beepBuffers = {};
+let _beepBuffersReady = false;
+let _beepBuffersPromise = null;
 
-async function loadBeepBuffers() {
+function loadBeepBuffers() {
+  if (_beepBuffersPromise) return _beepBuffersPromise;
   const ctx = getAudioCtx();
   const files = {
     tick: 'sounds/beep_tick.m4a',
@@ -17,19 +21,22 @@ async function loadBeepBuffers() {
     warn: 'sounds/beep_warn.m4a',
     end:  'sounds/beep_end.m4a',
   };
-  for (const [key, url] of Object.entries(files)) {
-    try {
-      const resp = await fetch(url);
-      const ab = await resp.arrayBuffer();
-      _beepBuffers[key] = await ctx.decodeAudioData(ab);
-    } catch (e) { console.warn('beep load failed:', key, e); }
-  }
+  _beepBuffersPromise = Promise.all(
+    Object.entries(files).map(async ([key, url]) => {
+      try {
+        const resp = await fetch(url);
+        const ab = await resp.arrayBuffer();
+        _beepBuffers[key] = await ctx.decodeAudioData(ab);
+      } catch (e) { console.warn('beep load failed:', key, e); }
+    })
+  ).then(() => { _beepBuffersReady = true; });
+  return _beepBuffersPromise;
 }
 
 function playBeepBuffer(key) {
   const ctx = getAudioCtx();
   const buf = _beepBuffers[key];
-  if (!buf) return;
+  if (!buf || ctx.state !== 'running') return;
   const src = ctx.createBufferSource();
   src.buffer = buf;
   const gain = ctx.createGain();
@@ -39,22 +46,21 @@ function playBeepBuffer(key) {
   src.start(ctx.currentTime);
 }
 
+let _ctxResumePromise = null;
+
 function unlockAudioSync() {
   ensurePhaseAudio();
   const ctx = getAudioCtx();
-  // Unlock AudioContext with silent buffer (iOS requires sync play in gesture)
+  // Play silent buffer synchronously (iOS Safari requirement)
   const buf = ctx.createBuffer(1, 1, 22050);
   const src = ctx.createBufferSource();
   src.buffer = buf;
   src.connect(ctx.destination);
   src.start(0);
-  ctx.resume().then(() => {
-    // Load beep buffers after AudioContext is running
-    loadBeepBuffers();
-  });
+  _ctxResumePromise = ctx.resume();
 }
 
-// Pre-unlock on first touch anywhere
+// Pre-unlock on first touch anywhere on page
 ['touchend', 'click'].forEach(evt => {
   document.addEventListener(evt, function preUnlock() {
     unlockAudioSync();
@@ -872,12 +878,12 @@ function tickTime() {
 document.getElementById('circle-tap').addEventListener('click', handleTap);
 
 function handleTap() {
-  // Unlock AudioContext synchronously within the click gesture
   unlockAudioSync();
   if (timer.phase === 'idle') {
-    // 100ms delay: gives AudioContext.resume() time to resolve before first beepTick
-    // Imperceptible to the user but required on iOS Safari
-    setTimeout(beginPrep, 100);
+    // Wait for both AudioContext.resume() and beep buffers before starting prep
+    Promise.all([_ctxResumePromise, _beepBuffersPromise]).then(() => {
+      beginPrep();
+    });
   } else if (timer.phase === 'done') {
     // do nothing, results screen handles it
   } else {
@@ -1220,6 +1226,7 @@ document.getElementById('music-disabled-toggle').addEventListener('change', (e) 
 /* ===== INIT ===== */
 function init() {
   installDemoMusicIfNeeded(); // start background fetch immediately
+  loadBeepBuffers();          // pre-decode beep audio (no gesture needed)
   loadWorkouts();
   renderHome();
 
