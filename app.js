@@ -1058,6 +1058,27 @@ function beginPrep() {
   }, 1000);
 }
 
+let _skipShowTimeout = null;
+
+function showSkipBtn() {
+  clearTimeout(_skipShowTimeout);
+  const wrap = document.getElementById('timer-skip-wrap');
+  if (!wrap) return;
+  wrap.style.display = 'flex';
+  // force reflow then fade in after 2s
+  _skipShowTimeout = setTimeout(() => {
+    wrap.classList.add('skip-visible');
+  }, 2000);
+}
+
+function hideSkipBtn() {
+  clearTimeout(_skipShowTimeout);
+  const wrap = document.getElementById('timer-skip-wrap');
+  if (!wrap) return;
+  wrap.classList.remove('skip-visible');
+  wrap.style.display = 'none';
+}
+
 function startRound(roundIdx) {
   timer.currentRound = roundIdx;
   timer.paused = false;
@@ -1084,6 +1105,7 @@ function startRound(roundIdx) {
   beepGo();
   playPhaseMusic(workout.id, 'work');
   flashCircle();
+  showSkipBtn();
   runTick();
 }
 
@@ -1153,6 +1175,7 @@ function onPhaseEnd() {
       timer.log.push({ round: timer.currentRound + 1, exercise: 'Отдых', phase: 'rest', duration: exRest });
       beepGo();
       playPhaseMusic(workout.id, 'rest');
+      showSkipBtn();
       runTick();
     } else {
       afterRest();
@@ -1176,6 +1199,7 @@ function afterRest() {
 function finishWorkout() {
   clearInterval(timer.intervalId);
   timer.phase = 'done';
+  hideSkipBtn();
   playPhaseMusic(timer.workout.id, 'fin');
   document.getElementById('circle-pulse').classList.remove('beat');
   vibrate([100, 50, 100, 50, 200]);
@@ -1247,6 +1271,7 @@ function spawnConfetti() {
 document.getElementById('btn-stop-timer').addEventListener('click', () => {
   clearInterval(timer.intervalId);
   timer.phase = 'idle';
+  hideSkipBtn();
   stopPhaseMusic();
   document.getElementById('circle-pulse').classList.remove('beat');
   document.getElementById('prep-overlay').style.display = 'none';
@@ -1256,6 +1281,14 @@ document.getElementById('btn-stop-timer').addEventListener('click', () => {
   timer_screen.classList.remove('active');
   home.classList.remove('slide-out');
   home.classList.add('active');
+});
+
+document.getElementById('btn-skip-phase').addEventListener('click', () => {
+  if (timer.phase !== 'work' && timer.phase !== 'rest') return;
+  clearInterval(timer.intervalId);
+  vibrate([30]);
+  hideSkipBtn();
+  onPhaseEnd();
 });
 
 /* ===== RESULTS BACK ===== */
