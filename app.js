@@ -119,10 +119,18 @@ function deleteAllMusicBlobs(workoutId) {
 
 /* ===== MUSIC PLAYER ===== */
 // Single Audio element reused across all phases — keeps browser autoplay unlock
-const _phaseAudio = new Audio();
-_phaseAudio.loop = true;
-_phaseAudio.volume = 0.6;
+// Created lazily on first user gesture so browser allows autoplay
+let _phaseAudio = null;
 let _phaseAudioUrl = null;
+
+function ensurePhaseAudio() {
+  if (!_phaseAudio) {
+    _phaseAudio = new Audio();
+    _phaseAudio.loop = true;
+    _phaseAudio.volume = 0.6;
+  }
+  return _phaseAudio;
+}
 
 async function playPhaseMusic(workoutId, phase) {
   // Check workout-level music-disabled flag
@@ -132,18 +140,20 @@ async function playPhaseMusic(workoutId, phase) {
   let blob = await loadMusicBlob(workoutId, phase);
   if (!blob) blob = await loadMusicBlob('_demo', phase); // fallback to demo
   if (!blob) return;
-  _phaseAudio.pause();
+  const audio = ensurePhaseAudio();
+  audio.pause();
   if (_phaseAudioUrl) {
     URL.revokeObjectURL(_phaseAudioUrl);
     _phaseAudioUrl = null;
   }
   _phaseAudioUrl = URL.createObjectURL(blob);
-  _phaseAudio.src = _phaseAudioUrl;
-  _phaseAudio.currentTime = 0;
-  _phaseAudio.play().catch(() => {});
+  audio.src = _phaseAudioUrl;
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
 }
 
 function stopPhaseMusic() {
+  if (!_phaseAudio) return;
   _phaseAudio.pause();
   _phaseAudio.currentTime = 0;
   if (_phaseAudioUrl) {
@@ -154,11 +164,11 @@ function stopPhaseMusic() {
 }
 
 function pausePhaseMusic() {
-  if (!_phaseAudio.paused) _phaseAudio.pause();
+  if (_phaseAudio && !_phaseAudio.paused) _phaseAudio.pause();
 }
 
 function resumePhaseMusic() {
-  if (_phaseAudio.paused && _phaseAudio.src) _phaseAudio.play().catch(() => {});
+  if (_phaseAudio && _phaseAudio.paused && _phaseAudio.src) _phaseAudio.play().catch(() => {});
 }
 
 /* ===== APP STATE ===== */
@@ -833,6 +843,9 @@ function tickTime() {
 document.getElementById('circle-tap').addEventListener('click', handleTap);
 
 function handleTap() {
+  // Unlock AudioContext and Audio element on first user gesture
+  getAudioCtx();
+  ensurePhaseAudio();
   if (timer.phase === 'idle') {
     beginPrep();
   } else if (timer.phase === 'done') {
