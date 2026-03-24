@@ -7,16 +7,13 @@ function getAudioCtx() {
 }
 
 function unlockAudioSync() {
-  const ctx = getAudioCtx();
   ensurePhaseAudio();
-  if (ctx.state !== 'running') {
-    const buf = ctx.createBuffer(1, 1, 22050);
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    src.start(0);
-    ctx.resume();
-  }
+  // Unlock all beep Audio elements synchronously within gesture
+  Object.values(_beepAudio).forEach(a => {
+    a.play().catch(() => {});
+    a.pause();
+    a.currentTime = 0;
+  });
 }
 
 // Pre-unlock AudioContext on first touchend/click anywhere on the page.
@@ -53,20 +50,35 @@ function beep(freq = 880, dur = 0.12, vol = 0.6, type = 'sine') {
   } catch (e) { /* audio not available */ }
 }
 
-// Short tick: 3, 2, 1 countdown — longer+louder so it's audible on phone speakers
-function beepTick()  { beep(880, 0.22, 0.75, 'sine'); }
-// Long GO: start of interval
-function beepGo()    { beep(1100, 0.55, 0.7, 'sine'); }
-// End-warning: last 3 seconds of an interval
-function beepWarn()  { beep(660, 0.08, 0.4, 'sine'); }
-// Phase end double-beep
-function beepEnd()   {
-  beep(660, 0.10, 0.5, 'sine');
-  setTimeout(() => beep(550, 0.18, 0.5, 'sine'), 130);
+// Beep sounds via <audio> files — guaranteed to work on iOS Safari
+// (AudioContext beeps fail on iOS; HTML5 Audio works once unlocked)
+const _beepAudio = {
+  tick: new Audio('sounds/beep_tick.m4a'),
+  go:   new Audio('sounds/beep_go.m4a'),
+  warn: new Audio('sounds/beep_warn.m4a'),
+  end:  new Audio('sounds/beep_end.m4a'),
+};
+Object.values(_beepAudio).forEach(a => { a.preload = 'auto'; a.volume = 0.85; });
+
+function playBeepFile(key) {
+  const a = _beepAudio[key];
+  if (!a) return;
+  a.currentTime = 0;
+  a.play().catch(() => {});
 }
 
-// Unlock audio on first user tap (required on iOS)
-document.addEventListener('click', () => getAudioCtx(), { once: true });
+function flashTick() {
+  const el = document.getElementById('tick-flash');
+  if (!el) return;
+  el.classList.remove('active');
+  void el.offsetWidth;
+  el.classList.add('active');
+}
+
+function beepTick()  { flashTick(); playBeepFile('tick'); }
+function beepGo()    { playBeepFile('go'); }
+function beepWarn()  { playBeepFile('warn'); }
+function beepEnd()   { playBeepFile('end'); }
 
 /* ===== DEMO MUSIC INSTALL ===== */
 async function installDemoMusicIfNeeded() {

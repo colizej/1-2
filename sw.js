@@ -1,10 +1,14 @@
-const CACHE_NAME = 'odindva-v7';
+const CACHE_NAME = 'odindva-v8';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
+  './sounds/beep_tick.m4a',
+  './sounds/beep_go.m4a',
+  './sounds/beep_warn.m4a',
+  './sounds/beep_end.m4a',
   './sounds/demo_work.m4a',
   './sounds/demo_relaxe.m4a',
   './sounds/demo_fin.m4a',
