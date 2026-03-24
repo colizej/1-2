@@ -367,7 +367,7 @@ function renderHome() {
       <div class="workout-card-icon">${w.icon || '💪'}</div>
       <div class="workout-card-info">
         <div class="workout-card-name">${escHtml(w.name)}</div>
-        <div class="workout-card-meta">${w.intervals} подходов · ${fmtSec(w.work)} работа</div>
+        <div class="workout-card-meta">${w.intervals} упражнений · ${fmtSec(w.work)} работа</div>
       </div>
       <div class="workout-card-arrow">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
@@ -469,6 +469,9 @@ function closeGearSheet() {
   setTimeout(() => { overlay.style.display = 'none'; }, 300);
 }
 
+document.getElementById('btn-detail-export').addEventListener('click', () => {
+  if (detailWorkout) exportWorkout(detailWorkout);
+});
 document.getElementById('btn-detail-gear').addEventListener('click', openGearSheet);
 document.getElementById('sheet-overlay').addEventListener('click', (e) => {
   if (e.target === document.getElementById('sheet-overlay')) closeGearSheet();
@@ -577,7 +580,7 @@ function renderProgress() {
       </div>
       <div class="progress-card-right">
         <div class="progress-workout">${escHtml(item.workoutName)}</div>
-        <div class="progress-meta">${item.rounds} подх. · ${fmtMin(item.totalTime)}</div>
+        <div class="progress-meta">${item.rounds} упр. · ${fmtMin(item.totalTime)}</div>
       </div>
       <button class="progress-del-btn" aria-label="Удалить запись">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
@@ -678,7 +681,6 @@ function openCreateScreen() {
 }
 
 function updateStepperDisplay() {
-  document.getElementById('val-intervals').textContent = formSettings.intervals;
   document.getElementById('val-prepTime').textContent = formSettings.prepTime;
 }
 
@@ -698,7 +700,7 @@ function addExercise(name = '', duration = null, rest = null) {
   item.innerHTML = `
     <div class="ex-header">
       <div class="exercise-num">${idx + 1}</div>
-      <input type="text" class="exercise-input" placeholder="Название подхода" value="${escHtml(name)}" />
+      <input type="text" class="exercise-input" placeholder="Название упражнения" value="${escHtml(name)}" />
       <button class="btn-del-exercise" aria-label="Удалить">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
@@ -795,13 +797,13 @@ function saveWorkout() {
   const inputs = document.querySelectorAll('#exercises-list .exercise-input');
   const exercises = Array.from(inputs).map((inp, i) => ({
     id: i + 1,
-    name: inp.value.trim() || `Подход ${i + 1}`,
+    name: inp.value.trim() || `Упражнение ${i + 1}`,
     duration: formExercises[i] ? formExercises[i].duration : formSettings.work,
     rest: formExercises[i] !== undefined ? formExercises[i].rest : formSettings.rest,
   }));
 
   if (exercises.length === 0) {
-    exercises.push({ id: 1, name: 'Подход' });
+    exercises.push({ id: 1, name: 'Упражнение' });
   }
 
   const editId = document.getElementById('screen-create').dataset.editId;
@@ -1089,7 +1091,7 @@ function startRound(roundIdx) {
   const exIdx = roundIdx % exCount;
   timer.currentExIdx = exIdx;
 
-  const roundLabel = `Подход ${roundIdx + 1}/${workout.intervals}`;
+  const roundLabel = `Упражнение ${roundIdx + 1}/${workout.intervals}`;
   document.getElementById('timer-round-label').textContent = roundLabel;
 
   updateDots(roundIdx);
@@ -1223,7 +1225,7 @@ function showResults() {
     const row = document.createElement('div');
     row.className = 'log-entry';
     row.innerHTML = `
-      <span class="log-name">Подход ${entry.round} · ${escHtml(entry.exercise)}</span>
+      <span class="log-name">Упражнение ${entry.round} · ${escHtml(entry.exercise)}</span>
       <span class="log-time">${fmtSec(entry.duration)}</span>
     `;
     logEl.appendChild(row);
@@ -1333,26 +1335,20 @@ function closeSettingsSheet() {
   setTimeout(() => { overlay.style.display = 'none'; }, 300);
 }
 
-function exportWorkouts() {
-  const workouts = JSON.parse(localStorage.getItem('odindva_workouts') || '[]');
-  if (workouts.length === 0) {
-    showConfirm('Нет тренировок для экспорта', () => {});
-    return;
-  }
+function exportWorkout(workout) {
   const data = {
     version: 1,
     exported: new Date().toISOString(),
-    workouts,
+    workouts: [workout],
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   const date = new Date().toISOString().slice(0, 10);
   a.href = url;
-  a.download = `odindva-workouts-${date}.json`;
+  a.download = `odindva-${workout.name.replace(/[^a-zA-Zа-яА-Я0-9]/g, '_')}-${date}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  closeSettingsSheet();
 }
 
 function importWorkouts(file) {
@@ -1380,12 +1376,14 @@ function importWorkouts(file) {
   reader.readAsText(file);
 }
 
-document.getElementById('btn-open-settings').addEventListener('click', openSettingsSheet);
 document.getElementById('settings-cancel').addEventListener('click', closeSettingsSheet);
 document.getElementById('settings-overlay').addEventListener('click', (e) => {
   if (e.target === document.getElementById('settings-overlay')) closeSettingsSheet();
 });
-document.getElementById('settings-export').addEventListener('click', exportWorkouts);
+document.getElementById('settings-new-workout').addEventListener('click', () => {
+  closeSettingsSheet();
+  openCreateScreen();
+});
 document.getElementById('settings-import').addEventListener('click', () => {
   document.getElementById('settings-import-file').click();
 });
@@ -1395,7 +1393,7 @@ document.getElementById('settings-import-file').addEventListener('change', (e) =
 });
 
 /* ===== WIRE UP BUTTONS ===== */
-document.getElementById('btn-open-create').addEventListener('click', openCreateScreen);
+document.getElementById('btn-open-create').addEventListener('click', openSettingsSheet);
 document.getElementById('btn-back-create').addEventListener('click', () => {
   const home = document.getElementById('screen-home');
   const create = document.getElementById('screen-create');
