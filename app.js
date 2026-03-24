@@ -84,10 +84,11 @@ function beepEnd()   { playBeepBuffer('end'); }
 
 /* ===== DEMO MUSIC INSTALL ===== */
 async function installDemoMusicIfNeeded() {
-  if (localStorage.getItem('odindva_demo_v3')) return;
+  if (localStorage.getItem('odindva_demo_v4')) return;
   const map = {
     work:     'sounds/demo_work.m4a',
     rest:     'sounds/demo_relaxe.m4a',
+    fin:      'sounds/demo_fin.m4a',
   };
   try {
     for (const [phase, path] of Object.entries(map)) {
@@ -98,7 +99,8 @@ async function installDemoMusicIfNeeded() {
     }
     localStorage.removeItem('odindva_demo_v1');
     localStorage.removeItem('odindva_demo_v2');
-    localStorage.setItem('odindva_demo_v3', '1');
+    localStorage.removeItem('odindva_demo_v3');
+    localStorage.setItem('odindva_demo_v4', '1');
   } catch (e) {
     console.warn('Demo music install failed:', e);
   }
@@ -148,7 +150,7 @@ async function deleteMusicBlob(workoutId, phase) {
 }
 
 function deleteAllMusicBlobs(workoutId) {
-  ['work', 'rest'].forEach(p => deleteMusicBlob(workoutId, p));
+  ['work', 'rest', 'fin'].forEach(p => deleteMusicBlob(workoutId, p));
 }
 
 /* ===== MUSIC PLAYER ===== */
@@ -331,6 +333,7 @@ function openDetail(w) {
   const tracks = [
     { label: 'Работа',  name: w.musicName },
     { label: 'Отдых',   name: w.musicNameRest },
+    { label: 'Финиш',   name: w.musicNameFin },
   ].filter(t => t.name);
 
   if (w.musicDisabled) {
@@ -433,6 +436,7 @@ function openEditScreen(w) {
   formMusicDisabled = w.musicDisabled || false;
   setFormMusicUI('work',     w.musicName         || null);
   setFormMusicUI('rest',     w.musicNameRest     || null);
+  setFormMusicUI('fin',      w.musicNameFin      || null);
   updateMusicDisabledUI();
 
   document.getElementById('workout-name').value = w.name;
@@ -524,6 +528,7 @@ let formExercises = [];
 const formMusic = {
   work:     { blob: null, action: null },
   rest:     { blob: null, action: null },
+  fin:      { blob: null, action: null },
 };
 let formMusicDisabled = false;
 
@@ -535,7 +540,7 @@ function updateMusicDisabledUI() {
 }
 
 function resetFormMusic() {
-  ['work', 'rest'].forEach(p => { formMusic[p] = { blob: null, action: null }; });
+  ['work', 'rest', 'fin'].forEach(p => { formMusic[p] = { blob: null, action: null }; });
 }
 
 function setFormMusicUI(phase, name) {
@@ -547,7 +552,7 @@ function setFormMusicUI(phase, name) {
     info.style.display = 'flex';
     info.classList.remove('music-demo-active');
     if (removeBtn) removeBtn.style.display = '';
-  } else if (localStorage.getItem('odindva_demo_v3')) {
+  } else if (localStorage.getItem('odindva_demo_v4')) {
     nameEl.textContent = 'Демо';
     info.style.display = 'flex';
     info.classList.add('music-demo-active');
@@ -558,8 +563,8 @@ function setFormMusicUI(phase, name) {
   }
 }
 
-// File pickers for work and rest phases
-['work', 'rest'].forEach(phase => {
+// File pickers for work, rest, and fin phases
+['work', 'rest', 'fin'].forEach(phase => {
   document.getElementById(`music-file-input-${phase}`).addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -583,7 +588,7 @@ function openCreateScreen() {
   document.getElementById('workout-name').value = '';
   document.getElementById('exercises-list').innerHTML = '';
   document.getElementById('screen-create').dataset.editId = '';
-  ['work', 'rest'].forEach(p => setFormMusicUI(p, null));
+  ['work', 'rest', 'fin'].forEach(p => setFormMusicUI(p, null));
   updateMusicDisabledUI();
   updateStepperDisplay();
   showScreen('screen-create');
@@ -741,11 +746,12 @@ function saveWorkout() {
         musicDisabled:     formMusicDisabled,
         musicName:         resolveName('work', old.musicName),
         musicNameRest:     resolveName('rest', old.musicNameRest),
+        musicNameFin:      resolveName('fin',  old.musicNameFin),
       };
       detailWorkout = state.workouts[idx];
 
       // Persist music blob changes per phase
-      ['work', 'rest'].forEach(p => {
+      ['work', 'rest', 'fin'].forEach(p => {
         const m = formMusic[p];
         if (m.action === 'set' && m.blob) saveMusicBlob(editId, p, m.blob);
         else if (m.action === 'remove')   deleteMusicBlob(editId, p);
@@ -771,11 +777,12 @@ function saveWorkout() {
     musicDisabled:     formMusicDisabled,
     musicName:         formMusic.work.blob ? formMusic.work.blob.name : null,
     musicNameRest:     formMusic.rest.blob ? formMusic.rest.blob.name : null,
+    musicNameFin:      formMusic.fin.blob  ? formMusic.fin.blob.name  : null,
     icon: icons[Math.floor(Math.random() * icons.length)],
     createdAt: new Date().toISOString(),
   };
 
-  ['work', 'rest'].forEach(p => {
+  ['work', 'rest', 'fin'].forEach(p => {
     if (formMusic[p].blob) saveMusicBlob(workout.id, p, formMusic[p].blob);
   });
 
@@ -1089,7 +1096,7 @@ function afterRest() {
 function finishWorkout() {
   clearInterval(timer.intervalId);
   timer.phase = 'done';
-  stopPhaseMusic();
+  playPhaseMusic(timer.workout.id, 'fin');
   document.getElementById('circle-pulse').classList.remove('beat');
   vibrate([100, 50, 100, 50, 200]);
 
@@ -1173,6 +1180,7 @@ document.getElementById('btn-stop-timer').addEventListener('click', () => {
 
 /* ===== RESULTS BACK ===== */
 document.getElementById('btn-results-home').addEventListener('click', () => {
+  stopPhaseMusic();
   showScreen('screen-home', false);
   const home = document.getElementById('screen-home');
   home.style.transform = 'translateX(0)';
