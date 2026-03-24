@@ -393,7 +393,6 @@ let detailWorkout = null;
 function openDetail(w) {
   detailWorkout = w;
   document.getElementById('detail-title').textContent = w.name;
-  document.getElementById('detail-intervals').textContent = w.intervals;
 
   const exList = document.getElementById('detail-exercises');
   exList.innerHTML = '';
@@ -469,12 +468,13 @@ function closeGearSheet() {
   setTimeout(() => { overlay.style.display = 'none'; }, 300);
 }
 
-document.getElementById('btn-detail-export').addEventListener('click', () => {
-  if (detailWorkout) exportWorkout(detailWorkout);
-});
 document.getElementById('btn-detail-gear').addEventListener('click', openGearSheet);
 document.getElementById('sheet-overlay').addEventListener('click', (e) => {
   if (e.target === document.getElementById('sheet-overlay')) closeGearSheet();
+});
+document.getElementById('sheet-export').addEventListener('click', () => {
+  closeGearSheet();
+  if (detailWorkout) exportWorkout(detailWorkout);
 });
 document.getElementById('sheet-cancel').addEventListener('click', closeGearSheet);
 
