@@ -533,6 +533,7 @@ function openEditScreen(w) {
   updateStepperDisplay();
   // Mark as editing
   document.getElementById('screen-create').dataset.editId = w.id;
+  document.getElementById('create-screen-title').textContent = w.name;
   document.getElementById('btn-save-workout').textContent = 'Сохранить';
   showScreen('screen-create');
 }
@@ -674,6 +675,7 @@ function openCreateScreen() {
   document.getElementById('workout-name').value = '';
   document.getElementById('exercises-list').innerHTML = '';
   document.getElementById('screen-create').dataset.editId = '';
+  document.getElementById('create-screen-title').textContent = 'Новая тренировка';
   ['work', 'rest', 'fin'].forEach(p => setFormMusicUI(p, null));
   updateMusicDisabledUI();
   updateStepperDisplay();
