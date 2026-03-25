@@ -936,82 +936,57 @@ function rebuildExerciseNums() {
 
 /* ===== DRAG & DROP EXERCISES ===== */
 function makeSortable(list, itemSel, handleSel, onEnd) {
-  let dragEl = null, startY = 0, dy = 0;
+  list.addEventListener('pointerdown', (e) => {
+    const handle = e.target.closest(handleSel);
+    if (!handle) return;
+    const item = handle.closest(itemSel);
+    if (!item) return;
 
-  function move(clientY) {
-    if (!dragEl) return;
-    dy = clientY - startY;
-    dragEl.style.transform = `translateY(${dy}px)`;
-    const dragRect = dragEl.getBoundingClientRect();
-    const dragMid = dragRect.top + dragRect.height / 2;
-    for (const sib of list.querySelectorAll(itemSel)) {
-      if (sib === dragEl) continue;
-      const sibRect = sib.getBoundingClientRect();
-      if (Math.abs(dragMid - (sibRect.top + sibRect.height / 2)) < sibRect.height * 0.5) {
-        const dragIdx = [...list.children].indexOf(dragEl);
-        const sibIdx  = [...list.children].indexOf(sib);
-        dragIdx < sibIdx ? list.insertBefore(sib, dragEl) : list.insertBefore(dragEl, sib);
-        const newNaturalTop = dragEl.getBoundingClientRect().top - dy;
-        dy = dragRect.top - newNaturalTop;
-        dragEl.style.transform = `translateY(${dy}px)`;
-        vibrate([8]);
-        break;
+    e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+
+    let dragEl = item;
+    let startY = e.clientY;
+    let dy = 0;
+    dragEl.classList.add('ex-dragging');
+    vibrate([15]);
+
+    function move(clientY) {
+      dy = clientY - startY;
+      dragEl.style.transform = `translateY(${dy}px)`;
+      const dragRect = dragEl.getBoundingClientRect();
+      const dragMid = dragRect.top + dragRect.height / 2;
+      for (const sib of list.querySelectorAll(itemSel)) {
+        if (sib === dragEl) continue;
+        const sibRect = sib.getBoundingClientRect();
+        if (Math.abs(dragMid - (sibRect.top + sibRect.height / 2)) < sibRect.height * 0.5) {
+          const dragIdx = [...list.children].indexOf(dragEl);
+          const sibIdx  = [...list.children].indexOf(sib);
+          dragIdx < sibIdx ? list.insertBefore(sib, dragEl) : list.insertBefore(dragEl, sib);
+          const newNaturalTop = dragEl.getBoundingClientRect().top - dy;
+          dy = dragRect.top - newNaturalTop;
+          dragEl.style.transform = `translateY(${dy}px)`;
+          vibrate([8]);
+          break;
+        }
       }
     }
-  }
 
-  // Named handlers added to document so scroll containers can't steal the gesture
-  function tmove(e) {
-    if (!dragEl) return;
-    e.preventDefault();
-    move(e.touches[0].clientY);
-  }
-  function tend() {
-    if (!dragEl) return;
-    dragEl.classList.remove('ex-dragging');
-    dragEl.style.transform = '';
-    dragEl = null;
-    document.removeEventListener('touchmove', tmove);
-    document.removeEventListener('touchend', tend);
-    document.removeEventListener('touchcancel', tend);
-    onEnd();
-  }
-
-  list.addEventListener('touchstart', (e) => {
-    const handle = e.target.closest(handleSel);
-    if (!handle) return;
-    const item = handle.closest(itemSel);
-    if (!item) return;
-    e.preventDefault();
-    dragEl = item; startY = e.touches[0].clientY; dy = 0;
-    dragEl.classList.add('ex-dragging');
-    vibrate([15]);
-    document.addEventListener('touchmove', tmove, { passive: false });
-    document.addEventListener('touchend', tend);
-    document.addEventListener('touchcancel', tend);
-  }, { passive: false });
-
-  list.addEventListener('mousedown', (e) => {
-    const handle = e.target.closest(handleSel);
-    if (!handle) return;
-    const item = handle.closest(itemSel);
-    if (!item) return;
-    e.preventDefault();
-    dragEl = item; startY = e.clientY; dy = 0;
-    dragEl.classList.add('ex-dragging');
-    vibrate([15]);
-    const mm = (ev) => move(ev.clientY);
-    const mu = () => {
-      if (!dragEl) return;
+    function drop() {
       dragEl.classList.remove('ex-dragging');
       dragEl.style.transform = '';
-      dragEl = null;
-      document.removeEventListener('mousemove', mm);
-      document.removeEventListener('mouseup', mu);
+      handle.removeEventListener('pointermove', onPM);
+      handle.removeEventListener('pointerup',   onPU);
+      handle.removeEventListener('pointercancel', onPU);
       onEnd();
-    };
-    document.addEventListener('mousemove', mm);
-    document.addEventListener('mouseup', mu);
+    }
+
+    const onPM = (ev) => { if (ev.pointerId === e.pointerId) move(ev.clientY); };
+    const onPU = (ev) => { if (ev.pointerId === e.pointerId) drop(); };
+
+    handle.addEventListener('pointermove', onPM);
+    handle.addEventListener('pointerup',   onPU);
+    handle.addEventListener('pointercancel', onPU);
   });
 }
 
