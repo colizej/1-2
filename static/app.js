@@ -936,22 +936,9 @@ function rebuildExerciseNums() {
 
 /* ===== DRAG & DROP EXERCISES ===== */
 function makeSortable(list, itemSel, handleSel, onEnd) {
-  list.addEventListener('pointerdown', (e) => {
-    const handle = e.target.closest(handleSel);
-    if (!handle) return;
-    const item = handle.closest(itemSel);
-    if (!item) return;
-    // Only primary button / first touch
-    if (e.button !== undefined && e.button !== 0) return;
-
-    const pid = e.pointerId;
-    let dragEl = item;
-    let startY = e.clientY;
+  function startDrag(dragEl, startY) {
     let dy = 0;
-
-    // Prevent scroll on the dragged row; cancel animation so it doesn't override transform
-    dragEl.style.touchAction = 'none';
-    dragEl.style.animation = 'none';
+    dragEl.style.animation = 'none';   // disable slideUp fill-mode overriding transform
     dragEl.classList.add('ex-dragging');
     vibrate([15]);
 
@@ -977,22 +964,49 @@ function makeSortable(list, itemSel, handleSel, onEnd) {
     }
 
     function drop() {
-      dragEl.style.touchAction = '';
       dragEl.style.animation = '';
       dragEl.classList.remove('ex-dragging');
       dragEl.style.transform = '';
-      document.removeEventListener('pointermove', onPM);
-      document.removeEventListener('pointerup',   onPU);
-      document.removeEventListener('pointercancel', onPU);
       onEnd();
     }
 
-    const onPM = (ev) => { if (ev.pointerId === pid) { ev.preventDefault(); move(ev.clientY); } };
-    const onPU = (ev) => { if (ev.pointerId === pid) drop(); };
+    return { move, drop };
+  }
 
-    document.addEventListener('pointermove', onPM);
-    document.addEventListener('pointerup',   onPU);
-    document.addEventListener('pointercancel', onPU);
+  // ---- Touch (Safari iOS + all mobile) ----
+  list.addEventListener('touchstart', (e) => {
+    const handle = e.target.closest(handleSel);
+    if (!handle) return;
+    const item = handle.closest(itemSel);
+    if (!item) return;
+    e.preventDefault();                // must be non-passive to block scroll
+
+    const { move, drop } = startDrag(item, e.touches[0].clientY);
+
+    function tmove(ev) { ev.preventDefault(); move(ev.touches[0].clientY); }
+    function tend()    { drop(); document.removeEventListener('touchmove', tmove); document.removeEventListener('touchend', tend); document.removeEventListener('touchcancel', tend); }
+
+    document.addEventListener('touchmove',   tmove,  { passive: false });
+    document.addEventListener('touchend',    tend);
+    document.addEventListener('touchcancel', tend);
+  }, { passive: false });
+
+  // ---- Mouse (desktop) ----
+  list.addEventListener('mousedown', (e) => {
+    const handle = e.target.closest(handleSel);
+    if (!handle) return;
+    const item = handle.closest(itemSel);
+    if (!item) return;
+    if (e.button !== 0) return;
+    e.preventDefault();
+
+    const { move, drop } = startDrag(item, e.clientY);
+
+    function mmove(ev) { move(ev.clientY); }
+    function mup()     { drop(); document.removeEventListener('mousemove', mmove); document.removeEventListener('mouseup', mup); }
+
+    document.addEventListener('mousemove', mmove);
+    document.addEventListener('mouseup',   mup);
   });
 }
 
