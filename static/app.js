@@ -221,6 +221,12 @@ async function playPhaseMusic(workoutId, phase) {
   const _wl = JSON.parse(localStorage.getItem('odindva_workouts') || '[]');
   const _ww = _wl.find(x => String(x.id) === String(workoutId));
   if (_ww && _ww.musicDisabled) return;
+  // Per-phase mute: stop any current music and skip
+  const muteKey = { work: 'musicMutedWork', rest: 'musicMutedRest', fin: 'musicMutedFin' }[phase];
+  if (_ww && muteKey && _ww[muteKey]) {
+    if (_musicSource) { try { _musicSource.stop(); } catch(e) {} _musicSource = null; _phaseCurrentKey = null; }
+    return;
+  }
 
   const key = `${workoutId}_${phase}`;
 
@@ -558,6 +564,7 @@ document.getElementById('sheet-delete').addEventListener('click', () => {
       home.classList.remove('slide-out');
       home.classList.add('active');
       renderHome();
+      showToast('Тренировка удалена');
     });
   }, 320);
 });
@@ -584,6 +591,7 @@ document.getElementById('sheet-duplicate').addEventListener('click', () => {
   home.classList.remove('slide-out');
   home.classList.add('active');
   vibrate([20, 50, 20]);
+  showToast('Дубликат создан');
 });
 
 document.getElementById('btn-back-detail').addEventListener('click', () => {
@@ -604,10 +612,12 @@ function openEditScreen(w) {
   formExercises = [];
   resetFormMusic();
   formMusicDisabled = w.musicDisabled || false;
+  formMusicMuted = { work: w.musicMutedWork || false, rest: w.musicMutedRest || false, fin: w.musicMutedFin || false };
   setFormMusicUI('work',     w.musicName         || null);
   setFormMusicUI('rest',     w.musicNameRest     || null);
   setFormMusicUI('fin',      w.musicNameFin      || null);
   updateMusicDisabledUI();
+  updateMusicMuteUI();
 
   document.getElementById('workout-name').value = w.name;
   document.getElementById('exercises-list').innerHTML = '';
@@ -816,6 +826,14 @@ const formMusic = {
   fin:      { blob: null, action: null },
 };
 let formMusicDisabled = false;
+let formMusicMuted = { work: false, rest: false, fin: false };
+
+function updateMusicMuteUI() {
+  ['work', 'rest', 'fin'].forEach(p => {
+    const btn = document.getElementById(`music-mute-${p}`);
+    if (btn) btn.classList.toggle('muted', formMusicMuted[p]);
+  });
+}
 
 function updateMusicDisabledUI() {
   const toggle = document.getElementById('music-disabled-toggle');
@@ -826,7 +844,17 @@ function updateMusicDisabledUI() {
 
 function resetFormMusic() {
   ['work', 'rest', 'fin'].forEach(p => { formMusic[p] = { blob: null, action: null }; });
+  formMusicMuted = { work: false, rest: false, fin: false };
 }
+
+// Mute toggles per phase
+['work', 'rest', 'fin'].forEach(phase => {
+  document.getElementById(`music-mute-${phase}`).addEventListener('click', () => {
+    formMusicMuted[phase] = !formMusicMuted[phase];
+    updateMusicMuteUI();
+    vibrate([10]);
+  });
+});
 
 function setFormMusicUI(phase, name) {
   const info   = document.getElementById(`music-track-info-${phase}`);
@@ -876,6 +904,7 @@ function openCreateScreen() {
   document.getElementById('create-screen-title').textContent = 'Новая тренировка';
   ['work', 'rest', 'fin'].forEach(p => setFormMusicUI(p, null));
   updateMusicDisabledUI();
+  updateMusicMuteUI();
   updateStepperDisplay();
   showScreen('screen-create');
 }
@@ -982,6 +1011,8 @@ function addExercise(name = '', duration = null, rest = null) {
   });
 
   document.getElementById('exercises-list').appendChild(item);
+  item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  showToast('Упражнение добавлено');
 }
 
 function rebuildExerciseNums() {
@@ -1120,6 +1151,9 @@ function saveWorkout() {
         rest: formSettings.rest,
         prepTime: formSettings.prepTime,
         musicDisabled:     formMusicDisabled,
+        musicMutedWork:    formMusicMuted.work,
+        musicMutedRest:    formMusicMuted.rest,
+        musicMutedFin:     formMusicMuted.fin,
         musicName:         resolveName('work', old.musicName),
         musicNameRest:     resolveName('rest', old.musicNameRest),
         musicNameFin:      resolveName('fin',  old.musicNameFin),
@@ -1138,6 +1172,7 @@ function saveWorkout() {
     renderHome();
     // Go back to detail
     openDetail(detailWorkout);
+    showToast('Тренировка сохранена');
     return;
   }
 
@@ -1150,6 +1185,9 @@ function saveWorkout() {
     rest: formSettings.rest,
     prepTime: formSettings.prepTime,
     musicDisabled:     formMusicDisabled,
+    musicMutedWork:    formMusicMuted.work,
+    musicMutedRest:    formMusicMuted.rest,
+    musicMutedFin:     formMusicMuted.fin,
     musicName:         formMusic.work.blob ? formMusic.work.blob.name : null,
     musicNameRest:     formMusic.rest.blob ? formMusic.rest.blob.name : null,
     musicNameFin:      formMusic.fin.blob  ? formMusic.fin.blob.name  : null,
@@ -1164,6 +1202,7 @@ function saveWorkout() {
   state.workouts.unshift(workout);
   saveWorkouts();
   renderHome();
+  showToast('Тренировка создана');
   showScreen('screen-home', false);
   const home = document.getElementById('screen-home');
   home.style.transform = 'translateX(-40%)';
@@ -1176,6 +1215,16 @@ function flashInput(el) {
   el.style.borderColor = 'var(--accent2)';
   el.style.animation = 'none';
   setTimeout(() => { el.style.borderColor = ''; }, 600);
+}
+
+let _toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('toast-show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('toast-show'), 2500);
 }
 
 /* ===== TIMER CORE ===== */

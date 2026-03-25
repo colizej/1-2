@@ -185,6 +185,53 @@ html, body {
 .empty-state span { font-size: 13px; }
 
 /* ===== INSTALL BANNER ===== */
+/* ===== TOAST ===== */
+#toast {
+  position: fixed;
+  bottom: calc(var(--safe-bottom) + 80px);
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  z-index: 9999;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+}
+#toast.toast-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ===== MUSIC PHASE MUTE ===== */
+.music-phase-mute {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 9px;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.music-phase-mute .icon-mute { display: none; }
+.music-phase-mute.muted {
+  border-color: var(--accent2);
+  color: var(--accent2);
+  background: rgba(255,82,82,0.08);
+}
+.music-phase-mute.muted .icon-sound { display: none; }
+.music-phase-mute.muted .icon-mute  { display: block; }
+
 #install-banner {
   display: flex;
   align-items: center;
