@@ -578,6 +578,16 @@ function workoutIcon(key, size = 22) {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="${size}" height="${size}">${paths}</svg>`;
 }
 
+function fmtTotalTime(s) {
+  if (s >= 3600) {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return m > 0 ? `${h} ч ${m} мин` : `${h} ч`;
+  }
+  const m = Math.floor(s / 60);
+  return m > 0 ? `${m} мин` : `${s} с`;
+}
+
 let progressDetailWorkout = null; // workout name key for current detail
 
 function renderProgress() {
@@ -595,7 +605,7 @@ function renderProgress() {
     if (!groups[key]) {
       groups[key] = {
         name: key,
-        icon: item.icon || '💪',
+        icon: item.icon || 'zap',
         sessions: [],
         totalTime: 0,
         totalExercises: 0,
@@ -611,42 +621,49 @@ function renderProgress() {
     (a, b) => new Date(b.lastDate) - new Date(a.lastDate)
   );
 
+  // Grand totals for header
+  const grandSessions = history.length;
+  const grandTime = history.reduce((acc, item) => acc + (item.totalTime || 0), 0);
+
   const section = document.createElement('div');
   section.className = 'progress-section';
 
   const header = document.createElement('div');
   header.className = 'progress-header';
   header.innerHTML = `
-    <span class="progress-header-title">Прогресс тренировок</span>
-    <span class="progress-header-stats">${history.length} сессий</span>
+    <span class="progress-header-title">Прогресс</span>
+    <span class="progress-header-stats">${grandSessions} сессий · ${fmtTotalTime(grandTime)}</span>
   `;
   section.appendChild(header);
 
-  const cardsWrap = document.createElement('div');
-  cardsWrap.className = 'progress-cards';
-  section.appendChild(cardsWrap);
+  const rowsWrap = document.createElement('div');
+  rowsWrap.className = 'progress-list';
+  section.appendChild(rowsWrap);
 
   const RU_MONTHS_SHORT = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+  const RU_DAYS_SHORT = ['вс','пн','вт','ср','чт','пт','сб'];
 
-  cards.forEach((group, i) => {
+  cards.forEach((group) => {
     const d = new Date(group.lastDate);
-    const lastDateStr = `${d.getDate()} ${RU_MONTHS_SHORT[d.getMonth()]}`;
     const sessWord = group.sessions.length === 1 ? 'раз' :
       (group.sessions.length < 5 ? 'раза' : 'раз');
 
-    const card = document.createElement('div');
-    card.className = 'progress-card';
-    card.style.animationDelay = `${i * 0.06}s`;
-    card.innerHTML = `
-      <div class="progress-card-icon">${workoutIcon(group.icon, 24)}</div>
-      <div class="progress-card-name">${escHtml(group.name)}</div>
-      <div class="progress-card-foot">
-        <div class="progress-card-sessions">${group.sessions.length} ${sessWord}</div>
-        <div class="progress-card-meta">${fmtMin(group.totalTime)} · ${lastDateStr}</div>
+    const row = document.createElement('div');
+    row.className = 'progress-row';
+    row.innerHTML = `
+      <div class="progress-row-date">
+        <span class="prow-day">${d.getDate()}</span>
+        <span class="prow-month">${RU_MONTHS_SHORT[d.getMonth()]}</span>
+        <span class="prow-dow">${RU_DAYS_SHORT[d.getDay()]}</span>
       </div>
+      <div class="progress-row-body">
+        <div class="prow-name">${escHtml(group.name)}</div>
+        <div class="prow-meta">${group.sessions.length} ${sessWord} · ${fmtTotalTime(group.totalTime)}</div>
+      </div>
+      <div class="progress-row-arrow">›</div>
     `;
-    card.addEventListener('click', () => openProgressDetail(group));
-    cardsWrap.appendChild(card);
+    row.addEventListener('click', () => openProgressDetail(group));
+    rowsWrap.appendChild(row);
   });
 
   list.appendChild(section);
@@ -1567,11 +1584,67 @@ document.getElementById('music-disabled-toggle').addEventListener('change', (e) 
   updateMusicDisabledUI();
 });
 
+/* ===== ORPHANED MUSIC BLOBS CLEANUP ===== */
+async function cleanOrphanedMusicBlobs() {
+  try {
+    const db = await openMusicDB();
+    const allKeys = await new Promise((resolve, reject) => {
+      const tx = db.transaction(MUSIC_STORE, 'readonly');
+      const req = tx.objectStore(MUSIC_STORE).getAllKeys();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = reject;
+    });
+    const validIds = new Set(state.workouts.map(w => String(w.id)));
+    validIds.add('_demo');
+    for (const key of allKeys) {
+      const str = String(key);
+      let workoutId = null;
+      for (const phase of ['_work', '_rest', '_fin']) {
+        if (str.endsWith(phase)) {
+          workoutId = str.slice(0, -phase.length);
+          break;
+        }
+      }
+      if (workoutId && !validIds.has(workoutId)) {
+        const phase = str.slice(workoutId.length + 1);
+        deleteMusicBlob(workoutId, phase);
+      }
+    }
+  } catch (e) { /* best-effort */ }
+}
+
+/* ===== INSTALL BANNER ===== */
+let _installPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _installPrompt = e;
+  if (!localStorage.getItem('odindva_install_dismissed')) {
+    document.getElementById('install-banner').style.display = 'flex';
+  }
+});
+
+document.getElementById('install-btn').addEventListener('click', () => {
+  if (!_installPrompt) return;
+  _installPrompt.prompt();
+  _installPrompt.userChoice.then(() => {
+    _installPrompt = null;
+    document.getElementById('install-banner').style.display = 'none';
+    localStorage.setItem('odindva_install_dismissed', '1');
+  });
+});
+
+document.getElementById('install-dismiss').addEventListener('click', () => {
+  document.getElementById('install-banner').style.display = 'none';
+  localStorage.setItem('odindva_install_dismissed', '1');
+});
+
 /* ===== INIT ===== */
 function init() {
   installDemoMusicIfNeeded(); // start background fetch immediately
   loadBeepBuffers();          // pre-decode beep audio (no gesture needed)
   loadWorkouts();
+  cleanOrphanedMusicBlobs();  // remove stale IndexedDB music blobs
   renderHome();
 
   // Register service worker
