@@ -1337,12 +1337,12 @@ html, body {
   font-size: 14px;
   font-weight: 700;
   color: var(--text);
-  line-height: 1.25;
+  line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  flex: 1;
+  max-height: calc(14px * 1.3 * 2);
 }
 .progress-card-foot {
   margin-top: 10px;
