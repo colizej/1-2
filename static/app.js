@@ -561,6 +561,8 @@ function openEditScreen(w) {
 const RU_DAYS = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
 const RU_MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 
+let progressDetailIdx = null;
+
 function renderProgress() {
   const list = document.getElementById('workouts-list');
   const old = list.querySelector('.progress-section');
@@ -572,50 +574,45 @@ function renderProgress() {
   const section = document.createElement('div');
   section.className = 'progress-section';
 
-  const title = document.createElement('div');
-  title.className = 'progress-title';
-  title.innerHTML = '<span class="form-label">Прогресс</span>';
-  section.appendChild(title);
+  const totalTime = history.reduce((s, it) => s + (it.totalTime || 0), 0);
+  const header = document.createElement('div');
+  header.className = 'progress-header';
+  header.innerHTML = `
+    <span class="progress-header-title">Прогресс тренировок</span>
+    <span class="progress-header-stats">${history.length} · ${fmtMin(totalTime)}</span>
+  `;
+  section.appendChild(header);
 
   const cardsWrap = document.createElement('div');
   cardsWrap.className = 'progress-cards';
   section.appendChild(cardsWrap);
 
-  // newest first — unshift ensures index 0 is always newest
-  const reversed = history.map((item, idx) => ({ item, idx })).slice(0, 50);
-  reversed.forEach(({ item, idx: origIdx }, i) => {
+  history.slice(0, 50).forEach((item, origIdx) => {
     const d = new Date(item.date);
-    const dayName = RU_DAYS[d.getDay()];
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    const dateStr = `${d.getDate()} ${RU_MONTHS[d.getMonth()]}, ${hh}:${mm}`;
+    const dayNum = d.getDate();
+    const monthShort = RU_MONTHS[d.getMonth()].slice(0, 3);
+    const dayShort = ['вс','пн','вт','ср','чт','пт','сб'][d.getDay()];
 
-    const card = document.createElement('div');
-    card.className = 'progress-card';
-    card.style.animationDelay = `${i * 0.04}s`;
-    card.innerHTML = `
-      <div class="progress-card-left">
-        <div class="progress-day">${dayName}</div>
-        <div class="progress-date">${dateStr}</div>
+    const strip = document.createElement('div');
+    strip.className = 'progress-strip';
+    strip.style.animationDelay = `${origIdx * 0.04}s`;
+    strip.innerHTML = `
+      <div class="progress-strip-date">
+        <div class="progress-strip-day-num">${dayNum}</div>
+        <div class="progress-strip-day-label">${monthShort} ${dayShort}</div>
       </div>
-      <div class="progress-card-right">
-        <div class="progress-workout">${escHtml(item.workoutName)}</div>
-        <div class="progress-meta">${item.rounds} упр. · ${fmtMin(item.totalTime)}</div>
+      <div class="progress-strip-divider"></div>
+      <div class="progress-strip-icon">${item.icon || '💪'}</div>
+      <div class="progress-strip-body">
+        <div class="progress-strip-name">${escHtml(item.workoutName)}</div>
+        <div class="progress-strip-meta">${item.exercises || 0} упр. · ${fmtMin(item.totalTime)}</div>
       </div>
-      <button class="progress-del-btn" aria-label="Удалить запись">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-      </button>
+      <div class="progress-strip-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
     `;
-    card.querySelector('.progress-del-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      showConfirm('Удалить запись?', () => {
-        card.style.transition = 'opacity 0.2s, transform 0.2s';
-        card.style.opacity = '0';
-        card.style.transform = 'translateX(20px)';
-        setTimeout(() => deleteHistoryItem(origIdx), 220);
-      });
-    });
-    cardsWrap.appendChild(card);
+    strip.addEventListener('click', () => openProgressDetail(item, origIdx));
+    cardsWrap.appendChild(strip);
   });
 
   list.appendChild(section);
@@ -626,6 +623,59 @@ function deleteHistoryItem(idx) {
   history.splice(idx, 1);
   localStorage.setItem('odindva_history', JSON.stringify(history));
   renderProgress();
+}
+
+function openProgressDetail(item, origIdx) {
+  progressDetailIdx = origIdx;
+  document.getElementById('pdet-icon').textContent = item.icon || '💪';
+  document.getElementById('pdet-name').textContent = item.workoutName;
+
+  const d = new Date(item.date);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  document.getElementById('pdet-date').textContent =
+    `${RU_DAYS[d.getDay()]}, ${d.getDate()} ${RU_MONTHS[d.getMonth()]} · ${hh}:${mm}`;
+
+  document.getElementById('pdet-stat-time').textContent = fmtMin(item.totalTime);
+  document.getElementById('pdet-stat-ex').textContent = item.exercises || 0;
+
+  const log = item.log || [];
+  const chartEl = document.getElementById('pdet-chart');
+  const logEl = document.getElementById('pdet-log');
+  chartEl.innerHTML = '';
+  logEl.innerHTML = '';
+
+  if (log.length > 0) {
+    const maxDur = Math.max(...log.map(e => e.duration));
+    log.forEach(entry => {
+      const pct = maxDur > 0 ? (entry.duration / maxDur * 100) : 0;
+      const row = document.createElement('div');
+      row.className = 'pdet-chart-row';
+      row.innerHTML = `
+        <div class="pdet-chart-label">${escHtml(entry.exercise)}</div>
+        <div class="pdet-chart-track"><div class="pdet-chart-fill"></div></div>
+        <div class="pdet-chart-time">${fmtSec(entry.duration)}</div>
+      `;
+      chartEl.appendChild(row);
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        row.querySelector('.pdet-chart-fill').style.width = pct + '%';
+      }));
+
+      const logRow = document.createElement('div');
+      logRow.className = 'pdet-log-row';
+      logRow.innerHTML = `
+        <span class="pdet-log-num">${entry.round}</span>
+        <span class="pdet-log-name">${escHtml(entry.exercise)}</span>
+        <span class="pdet-log-time">${fmtSec(entry.duration)}</span>
+      `;
+      logEl.appendChild(logRow);
+    });
+  } else {
+    chartEl.innerHTML = '<div class="pdet-empty">Нет данных упражнений</div>';
+    logEl.innerHTML = '<div class="pdet-empty">—</div>';
+  }
+
+  showScreen('screen-progress-detail');
 }
 
 /* ===== CREATE WORKOUT ===== */
@@ -1258,9 +1308,11 @@ function showResults() {
   history.unshift({
     id: Date.now(),
     workoutName: workout.name,
+    icon: workout.icon || '💪',
     rounds: workout.intervals,
     totalTime: timer.totalElapsed,
     exercises: workout.exercises.length,
+    log: [...timer.log],
     date: new Date().toISOString(),
   });
   localStorage.setItem('odindva_history', JSON.stringify(history.slice(0, 100)));
@@ -1413,6 +1465,25 @@ document.getElementById('settings-import').addEventListener('click', () => {
 document.getElementById('settings-import-file').addEventListener('change', (e) => {
   importWorkouts(e.target.files[0]);
   e.target.value = '';
+});
+
+document.getElementById('btn-back-progress').addEventListener('click', () => {
+  const home = document.getElementById('screen-home');
+  const det = document.getElementById('screen-progress-detail');
+  det.classList.remove('active');
+  home.classList.remove('slide-out');
+  home.classList.add('active');
+});
+
+document.getElementById('pdet-delete').addEventListener('click', () => {
+  showConfirm('Удалить запись?', () => {
+    const home = document.getElementById('screen-home');
+    const det = document.getElementById('screen-progress-detail');
+    det.classList.remove('active');
+    home.classList.remove('slide-out');
+    home.classList.add('active');
+    if (progressDetailIdx !== null) deleteHistoryItem(progressDetailIdx);
+  });
 });
 
 /* ===== WIRE UP BUTTONS ===== */

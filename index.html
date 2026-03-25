@@ -320,6 +320,45 @@
     </div>
   </div>
 
+  <!-- SCREEN: Progress Detail -->
+  <div id="screen-progress-detail" class="screen">
+    <header class="app-header">
+      <button class="btn-back" id="btn-back-progress" aria-label="Назад">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h2>Прогресс</h2>
+      <div style="width:40px"></div>
+    </header>
+    <div class="pdet-scroll">
+      <div class="pdet-hero">
+        <div class="pdet-icon" id="pdet-icon">💪</div>
+        <div>
+          <div class="pdet-name" id="pdet-name">Тренировка</div>
+          <div class="pdet-date" id="pdet-date"></div>
+        </div>
+      </div>
+
+      <div class="pdet-stats">
+        <div class="pdet-stat">
+          <span class="pdet-stat-value" id="pdet-stat-time">—</span>
+          <span class="pdet-stat-label">Время</span>
+        </div>
+        <div class="pdet-stat">
+          <span class="pdet-stat-value" id="pdet-stat-ex">—</span>
+          <span class="pdet-stat-label">Упражнений</span>
+        </div>
+      </div>
+
+      <div class="pdet-section-label">График</div>
+      <div class="pdet-chart" id="pdet-chart"></div>
+
+      <div class="pdet-section-label">Упражнения</div>
+      <div class="pdet-log" id="pdet-log"></div>
+
+      <button class="btn-danger-outline" id="pdet-delete">Удалить запись</button>
+    </div>
+  </div>
+
   <!-- TICK FLASH -->
   <div id="tick-flash"></div>
 
