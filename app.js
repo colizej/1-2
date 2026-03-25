@@ -1,6 +1,21 @@
 /* ===== AUDIO ENGINE ===== */
 let audioCtx = null;
 
+/* ===== WAKE LOCK ===== */
+let _wakeLock = null;
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try { _wakeLock = await navigator.wakeLock.request('screen'); } catch {}
+}
+function releaseWakeLock() {
+  if (_wakeLock) { _wakeLock.release(); _wakeLock = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && timer && timer.phase && timer.phase !== 'idle' && timer.phase !== 'done') {
+    requestWakeLock();
+  }
+});
+
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
@@ -894,6 +909,7 @@ function flashInput(el) {
 const CIRCUMFERENCE = 2 * Math.PI * 120; // 753.98
 
 function startWorkout(workout) {
+  requestWakeLock();
   timer.workout = workout;
   timer.currentRound = 0;
   timer.currentExIdx = 0;
@@ -1204,6 +1220,7 @@ function afterRest() {
 function finishWorkout() {
   clearInterval(timer.intervalId);
   timer.phase = 'done';
+  releaseWakeLock();
   hideSkipBtn();
   playPhaseMusic(timer.workout.id, 'fin');
   document.getElementById('circle-pulse').classList.remove('beat');
@@ -1275,6 +1292,7 @@ function spawnConfetti() {
 document.getElementById('btn-stop-timer').addEventListener('click', () => {
   clearInterval(timer.intervalId);
   timer.phase = 'idle';
+  releaseWakeLock();
   hideSkipBtn();
   stopPhaseMusic();
   document.getElementById('circle-pulse').classList.remove('beat');
