@@ -546,6 +546,24 @@ document.getElementById('sheet-edit').addEventListener('click', () => {
   openEditScreen(detailWorkout);
 });
 
+document.getElementById('sheet-duplicate').addEventListener('click', () => {
+  closeGearSheet();
+  if (!detailWorkout) return;
+  const dup = JSON.parse(JSON.stringify(detailWorkout));
+  dup.id = Date.now();
+  dup.name = 'Дубликат — ' + detailWorkout.name;
+  dup.exercises.forEach(ex => { ex.id = Date.now() + Math.random(); });
+  state.workouts.push(dup);
+  saveWorkouts();
+  renderHome();
+  const home = document.getElementById('screen-home');
+  const detail = document.getElementById('screen-detail');
+  detail.classList.remove('active');
+  home.classList.remove('slide-out');
+  home.classList.add('active');
+  vibrate([20, 50, 20]);
+});
+
 document.getElementById('btn-back-detail').addEventListener('click', () => {
   const home = document.getElementById('screen-home');
   const detail = document.getElementById('screen-detail');
