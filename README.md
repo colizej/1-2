@@ -41,11 +41,15 @@
 │   ├── app.js          # Полная логика приложения
 │   └── style.css       # Все стили, CSS-переменные, анимации
 ├── icons/
-│   ├── favicon.svg     # Векторная иконка
-│   ├── favicon-32.png  # Растровый фолбэк
-│   ├── icon-180.png    # Apple Touch Icon
-│   ├── icon-192.png    # PWA icon
-│   └── icon-512.png    # PWA icon (maskable)
+│   ├── favicon.svg     # Векторный исходник логотипа
+│   ├── og-image.svg    # Векторный исходник социальной карточки 1200×630
+│   ├── og-image.png    # OG-образ для мессенджеров (генерируется)
+│   ├── favicon-32.png  # Растровый фолбэк (генерируется)
+│   ├── icon-180.png    # Apple Touch Icon (генерируется)
+│   ├── icon-192.png    # PWA icon (генерируется)
+│   └── icon-512.png    # PWA icon maskable (генерируется)
+├── scripts/
+│   └── gen-og.js       # SVG → PNG: все иконки + og-image
 └── sounds/
     ├── beep_tick.m4a   # Бип отсчёта подготовки
     ├── beep_go.m4a     # Бип старта фазы
@@ -59,9 +63,23 @@
 ## Запуск локально
 
 ```bash
-python3 -m http.server 8080
-# открыть http://localhost:8080
+make dev          # сервер на http://localhost:8080
+make dev PORT=3000  # другой порт
 ```
+
+## Иконки и OG-образ
+
+Все PNG-иконки генерируются из SVG-исходников скриптом:
+
+```bash
+make og  # → icons/og-image.png, icon-512.png, icon-192.png, icon-180.png, favicon-32.png
+```
+
+Исходники:
+- `icons/favicon.svg` — логотип приложения (все размеры иконок)
+- `icons/og-image.svg` — карточка 1200×630 для мессенджеров / Twitter
+
+Генератор: `scripts/gen-og.js` (Node.js + `@resvg/resvg-js`).
 
 ## Флоу тренировки
 

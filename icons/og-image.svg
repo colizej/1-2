@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <!-- Background subtle radial -->
+    <radialGradient id="bg" cx="50%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#14141f"/>
+      <stop offset="100%" stop-color="#0a0a0f"/>
+    </radialGradient>
+    <!-- Logo gradient (matches app header: top-left purple → bottom-right pink) -->
+    <linearGradient id="logoGrad" x1="505" y1="110" x2="695" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7c6fff"/>
+      <stop offset="100%" stop-color="#ff6f84"/>
+    </linearGradient>
+    <!-- Title text gradient: ОДИН white → · purple → ДВА pink -->
+    <linearGradient id="titleGrad" x1="370" y1="0" x2="840" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#f0f0f8"/>
+      <stop offset="44%"  stop-color="#d0caff"/>
+      <stop offset="58%"  stop-color="#7c6fff"/>
+      <stop offset="100%" stop-color="#ff6f84"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- ═══ LOGO ═══ -->
+  <!-- Outer track ring -->
+  <circle cx="600" cy="205" r="95"
+    stroke="#2a2a3a" stroke-width="16" fill="none"/>
+  <!-- Arc 270° (gap top-right → bottom-right, same as app header) -->
+  <circle cx="600" cy="205" r="95"
+    stroke="url(#logoGrad)" stroke-width="16" fill="none"
+    stroke-linecap="round"
+    stroke-dasharray="597 597"
+    stroke-dashoffset="149"
+    transform="rotate(-90 600 205)"/>
+  <!-- Center pulse dot -->
+  <circle cx="600" cy="205" r="24" fill="url(#logoGrad)"/>
+  <!-- Crown notch (top cap, same proportions as app header) -->
+  <rect x="584" y="94" width="32" height="20" rx="10" fill="#7c6fff"/>
+
+  <!-- ═══ TEXT ═══ -->
+  <!-- ОДИН·ДВА -->
+  <text x="600" y="415"
+    text-anchor="middle"
+    font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif"
+    font-weight="900" font-size="80" letter-spacing="8"
+    fill="url(#titleGrad)">ОДИН·ДВА</text>
+
+  <!-- Interval Timer -->
+  <text x="600" y="472"
+    text-anchor="middle"
+    font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif"
+    font-weight="400" font-size="30" letter-spacing="4"
+    fill="#888899">Interval Timer</text>
+
+  <!-- Thin separator -->
+  <line x1="530" y1="500" x2="670" y2="500" stroke="#2a2a3a" stroke-width="1"/>
+
+  <!-- odin-dva.ru -->
+  <text x="600" y="530"
+    text-anchor="middle"
+    font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif"
+    font-weight="400" font-size="24" letter-spacing="2"
+    fill="#555566">odin-dva.ru</text>
+</svg>

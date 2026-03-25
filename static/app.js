@@ -528,15 +528,15 @@ document.getElementById('sheet-share').addEventListener('click', async () => {
   const data = { version: 1, exported: new Date().toISOString(), workouts: [w] };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const date = new Date().toISOString().slice(0, 10);
-  const filename = `odindva-${w.name.replace(/[^a-zA-Zа-яА-Я0-9]/g, '_')}-${date}.json`;
+  const filename = `odin-dva-${w.name.replace(/[^a-zA-Zа-яА-Я0-9]/g, '_')}-${date}.json`;
   const file = new File([blob], filename, { type: 'application/json' });
   try {
     // Try sharing with file first (iOS, macOS Safari, Android Chrome)
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ title: w.name, files: [file] });
+      await navigator.share({ title: `${w.name} — ОДИН·ДВА`, text: `Тренировка «${w.name}»\nhttps://odin-dva.ru`, files: [file] });
     } else {
       // Desktop Chrome/Edge: share without file — opens OS share sheet
-      await navigator.share({ title: w.name, text: `Тренировка «${w.name}» из ОДИН·ДВА — https://odin-dva.ru` });
+      await navigator.share({ title: `${w.name} — ОДИН·ДВА`, text: `Тренировка «${w.name}» из ОДИН·ДВА\nhttps://odin-dva.ru` });
     }
   } catch (err) {
     if (err.name !== 'AbortError') exportWorkout(w); // last resort: download
