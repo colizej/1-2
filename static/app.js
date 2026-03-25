@@ -520,6 +520,22 @@ document.getElementById('sheet-export').addEventListener('click', () => {
   closeGearSheet();
   if (detailWorkout) exportWorkout(detailWorkout);
 });
+
+document.getElementById('sheet-share').addEventListener('click', async () => {
+  closeGearSheet();
+  if (!detailWorkout) return;
+  const w = detailWorkout;
+  const data = { version: 1, exported: new Date().toISOString(), workouts: [w] };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const date = new Date().toISOString().slice(0, 10);
+  const filename = `odindva-${w.name.replace(/[^a-zA-Zа-яА-Я0-9]/g, '_')}-${date}.json`;
+  const file = new File([blob], filename, { type: 'application/json' });
+  try {
+    await navigator.share({ title: w.name, files: [file] });
+  } catch (err) {
+    if (err.name !== 'AbortError') exportWorkout(w); // fallback to download
+  }
+});
 document.getElementById('sheet-cancel').addEventListener('click', closeGearSheet);
 
 document.getElementById('sheet-delete').addEventListener('click', () => {
@@ -1780,6 +1796,12 @@ function init() {
   cleanOrphanedMusicBlobs();
   initExerciseDragDrop();
   renderHome();
+
+  // Hide share button if Web Share API unavailable or can't share files
+  if (!navigator.share || !navigator.canShare) {
+    const btn = document.getElementById('sheet-share');
+    if (btn) btn.style.display = 'none';
+  }
 
   // Register service worker
   if ('serviceWorker' in navigator) {

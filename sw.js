@@ -1,4 +1,4 @@
-const CACHE_NAME = 'odindva-v36';
+const CACHE_NAME = 'odindva-v37';
 const ASSETS = [
   './',
   './index.html',
