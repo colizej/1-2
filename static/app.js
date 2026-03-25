@@ -941,13 +941,17 @@ function makeSortable(list, itemSel, handleSel, onEnd) {
     if (!handle) return;
     const item = handle.closest(itemSel);
     if (!item) return;
+    // Only primary button / first touch
+    if (e.button !== undefined && e.button !== 0) return;
 
-    e.preventDefault();
-    handle.setPointerCapture(e.pointerId);
-
+    const pid = e.pointerId;
     let dragEl = item;
     let startY = e.clientY;
     let dy = 0;
+
+    // Prevent scroll on the dragged row; cancel animation so it doesn't override transform
+    dragEl.style.touchAction = 'none';
+    dragEl.style.animation = 'none';
     dragEl.classList.add('ex-dragging');
     vibrate([15]);
 
@@ -955,7 +959,7 @@ function makeSortable(list, itemSel, handleSel, onEnd) {
       dy = clientY - startY;
       dragEl.style.transform = `translateY(${dy}px)`;
       const dragRect = dragEl.getBoundingClientRect();
-      const dragMid = dragRect.top + dragRect.height / 2;
+      const dragMid  = dragRect.top + dragRect.height / 2;
       for (const sib of list.querySelectorAll(itemSel)) {
         if (sib === dragEl) continue;
         const sibRect = sib.getBoundingClientRect();
@@ -973,20 +977,22 @@ function makeSortable(list, itemSel, handleSel, onEnd) {
     }
 
     function drop() {
+      dragEl.style.touchAction = '';
+      dragEl.style.animation = '';
       dragEl.classList.remove('ex-dragging');
       dragEl.style.transform = '';
-      handle.removeEventListener('pointermove', onPM);
-      handle.removeEventListener('pointerup',   onPU);
-      handle.removeEventListener('pointercancel', onPU);
+      document.removeEventListener('pointermove', onPM);
+      document.removeEventListener('pointerup',   onPU);
+      document.removeEventListener('pointercancel', onPU);
       onEnd();
     }
 
-    const onPM = (ev) => { if (ev.pointerId === e.pointerId) move(ev.clientY); };
-    const onPU = (ev) => { if (ev.pointerId === e.pointerId) drop(); };
+    const onPM = (ev) => { if (ev.pointerId === pid) { ev.preventDefault(); move(ev.clientY); } };
+    const onPU = (ev) => { if (ev.pointerId === pid) drop(); };
 
-    handle.addEventListener('pointermove', onPM);
-    handle.addEventListener('pointerup',   onPU);
-    handle.addEventListener('pointercancel', onPU);
+    document.addEventListener('pointermove', onPM);
+    document.addEventListener('pointerup',   onPU);
+    document.addEventListener('pointercancel', onPU);
   });
 }
 
