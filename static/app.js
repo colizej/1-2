@@ -414,13 +414,22 @@ function openDetail(w) {
   w.exercises.forEach((ex, i) => {
     const row = document.createElement('div');
     row.className = 'detail-exercise-row';
+    row.dataset.id = String(ex.id);
     const dur = ex.duration || w.work;
     const rst = ex.rest !== undefined ? ex.rest : w.rest;
     const restHtml = rst > 0
       ? `<span class="detail-ex-rest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M17 21a9 9 0 1 1 0-18 7 7 0 1 0 0 18z"/></svg> ${fmtSec(rst)}</span>`
       : '';
-    row.innerHTML = `<span class="detail-ex-num">${i + 1}</span><span class="detail-ex-name">${escHtml(ex.name)}</span><span class="detail-ex-dur">${fmtSec(dur)}</span>${restHtml}`;
+    row.innerHTML = `<span class="detail-ex-drag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="16" x2="20" y2="16"/></svg></span><span class="detail-ex-num">${i + 1}</span><span class="detail-ex-name">${escHtml(ex.name)}</span><span class="detail-ex-dur">${fmtSec(dur)}</span>${restHtml}`;
     exList.appendChild(row);
+  });
+  makeSortable(exList, '.detail-exercise-row', '.detail-ex-drag', () => {
+    const items = [...exList.querySelectorAll('.detail-exercise-row')];
+    const newOrder = items.map(el => detailWorkout.exercises.find(ex => String(ex.id) === el.dataset.id)).filter(Boolean);
+    detailWorkout.exercises = newOrder;
+    items.forEach((el, i) => el.querySelector('.detail-ex-num').textContent = i + 1);
+    const wi = state.workouts.findIndex(ww => ww.id === detailWorkout.id);
+    if (wi !== -1) { state.workouts[wi].exercises = newOrder; saveWorkouts(); }
   });
 
   // Show music track name if assigned
@@ -926,29 +935,22 @@ function rebuildExerciseNums() {
 }
 
 /* ===== DRAG & DROP EXERCISES ===== */
-function initExerciseDragDrop() {
-  const list = document.getElementById('exercises-list');
-  let dragEl = null;
-  let startY = 0;
-  let dy = 0;
+function makeSortable(list, itemSel, handleSel, onEnd) {
+  let dragEl = null, startY = 0, dy = 0;
 
-  function onStart(clientY, el) {
-    dragEl = el;
-    startY = clientY;
-    dy = 0;
+  function start(clientY, el) {
+    dragEl = el; startY = clientY; dy = 0;
     dragEl.classList.add('ex-dragging');
     vibrate([15]);
   }
 
-  function onMove(clientY) {
+  function move(clientY) {
     if (!dragEl) return;
     dy = clientY - startY;
     dragEl.style.transform = `translateY(${dy}px)`;
-
     const dragRect = dragEl.getBoundingClientRect();
     const dragMid = dragRect.top + dragRect.height / 2;
-
-    for (const sib of list.querySelectorAll('.exercise-item')) {
+    for (const sib of list.querySelectorAll(itemSel)) {
       if (sib === dragEl) continue;
       const sibRect = sib.getBoundingClientRect();
       if (Math.abs(dragMid - (sibRect.top + sibRect.height / 2)) < sibRect.height * 0.5) {
@@ -964,44 +966,53 @@ function initExerciseDragDrop() {
     }
   }
 
-  function onEnd() {
+  function end() {
     if (!dragEl) return;
     dragEl.classList.remove('ex-dragging');
     dragEl.style.transform = '';
+    dragEl = null;
+    onEnd();
+  }
+
+  list.addEventListener('touchstart', (e) => {
+    const handle = e.target.closest(handleSel);
+    if (!handle) return;
+    const item = handle.closest(itemSel);
+    if (!item) return;
+    e.preventDefault();
+    start(e.touches[0].clientY, item);
+  }, { passive: false });
+  list.addEventListener('touchmove', (e) => {
+    if (!dragEl) return;
+    e.preventDefault();
+    move(e.touches[0].clientY);
+  }, { passive: false });
+  list.addEventListener('touchend', end);
+  list.addEventListener('touchcancel', end);
+
+  list.addEventListener('mousedown', (e) => {
+    const handle = e.target.closest(handleSel);
+    if (!handle) return;
+    const item = handle.closest(itemSel);
+    if (!item) return;
+    e.preventDefault();
+    start(e.clientY, item);
+    const mm = (ev) => move(ev.clientY);
+    const mu = () => { end(); document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); };
+    document.addEventListener('mousemove', mm);
+    document.addEventListener('mouseup', mu);
+  });
+}
+
+function initExerciseDragDrop() {
+  const list = document.getElementById('exercises-list');
+  makeSortable(list, '.exercise-item', '.ex-drag-handle', () => {
     const newOrder = [...list.querySelectorAll('.exercise-item')]
       .map(el => formExercises.find(ex => String(ex.id) === el.dataset.id))
       .filter(Boolean);
     formExercises.length = 0;
     formExercises.push(...newOrder);
     rebuildExerciseNums();
-    dragEl = null;
-  }
-
-  // Touch
-  list.addEventListener('touchstart', (e) => {
-    const handle = e.target.closest('.ex-drag-handle');
-    if (!handle) return;
-    e.preventDefault();
-    onStart(e.touches[0].clientY, handle.closest('.exercise-item'));
-  }, { passive: false });
-  list.addEventListener('touchmove', (e) => {
-    if (!dragEl) return;
-    e.preventDefault();
-    onMove(e.touches[0].clientY);
-  }, { passive: false });
-  list.addEventListener('touchend', onEnd);
-  list.addEventListener('touchcancel', onEnd);
-
-  // Mouse (desktop)
-  list.addEventListener('mousedown', (e) => {
-    const handle = e.target.closest('.ex-drag-handle');
-    if (!handle) return;
-    e.preventDefault();
-    onStart(e.clientY, handle.closest('.exercise-item'));
-    const onMM = (ev) => onMove(ev.clientY);
-    const onMU = () => { onEnd(); document.removeEventListener('mousemove', onMM); document.removeEventListener('mouseup', onMU); };
-    document.addEventListener('mousemove', onMM);
-    document.addEventListener('mouseup', onMU);
   });
 }
 
