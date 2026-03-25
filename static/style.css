@@ -213,7 +213,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  color: white;
   flex-shrink: 0;
 }
 
@@ -1322,9 +1322,16 @@ html, body {
 }
 
 .progress-card-icon {
-  font-size: 28px;
-  line-height: 1;
-  margin-bottom: 6px;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 .progress-card-name {
   font-size: 14px;
@@ -1360,16 +1367,24 @@ html, body {
 .pdet-header-title {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 16px;
+  gap: 8px;
+  font-size: 15px;
   font-weight: 700;
   min-width: 0;
   overflow: hidden;
 }
+#pdet-header-icon {
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
 #pdet-header-name {
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
 }
 
 .pdet-scroll {
@@ -1437,8 +1452,8 @@ html, body {
   color: var(--text-muted);
   border-bottom: 1px solid var(--border);
 }
-.pdet-th-num { text-align: right; }
-.pdet-th-del { width: 36px; }
+.pdet-th-num { text-align: right; width: 60px; }
+.pdet-th-del { width: 40px; text-align: center; }
 .pdet-table tbody tr {
   border-bottom: 1px solid var(--border);
   transition: background 0.1s;
@@ -1457,18 +1472,20 @@ html, body {
 }
 .pdet-td-time {
   text-align: right;
+  width: 60px;
   font-weight: 700;
   color: var(--accent);
   white-space: nowrap;
 }
 .pdet-td-ex {
   text-align: right;
+  width: 40px;
   color: var(--rest-color);
   font-weight: 700;
 }
 .pdet-td-del {
   text-align: center;
-  width: 36px;
+  width: 40px;
 }
 .pdet-del-btn {
   background: none;

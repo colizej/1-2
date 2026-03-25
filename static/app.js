@@ -379,7 +379,7 @@ function renderHome() {
     card.className = 'workout-card';
     card.style.animationDelay = `${i * 0.05}s`;
     card.innerHTML = `
-      <div class="workout-card-icon">${w.icon || '💪'}</div>
+      <div class="workout-card-icon">${workoutIcon(w.icon)}</div>
       <div class="workout-card-info">
         <div class="workout-card-name">${escHtml(w.name)}</div>
         <div class="workout-card-meta">${w.intervals} упражнений · ${fmtMin((w.prepTime || 0) + w.exercises.reduce((s, ex) => s + (ex.duration || 0) + (ex.rest || 0), 0))} итого</div>
@@ -561,6 +561,23 @@ function openEditScreen(w) {
 const RU_DAYS = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
 const RU_MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 
+const WORKOUT_ICONS = {
+  zap:      '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  flame:    '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+  target:   '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  activity: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+  star:     '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+  heart:    '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',
+  trophy:   '<line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><path d="M7 4H17l-2 9H9L7 4z"/><path d="M5 4H3v6h2"/><path d="M19 4H21v6h-2"/>',
+  sun:      '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>',
+};
+const ICON_KEYS = Object.keys(WORKOUT_ICONS);
+
+function workoutIcon(key, size = 22) {
+  const paths = WORKOUT_ICONS[key] || WORKOUT_ICONS.zap;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="${size}" height="${size}">${paths}</svg>`;
+}
+
 let progressDetailWorkout = null; // workout name key for current detail
 
 function renderProgress() {
@@ -621,7 +638,7 @@ function renderProgress() {
     card.className = 'progress-card';
     card.style.animationDelay = `${i * 0.06}s`;
     card.innerHTML = `
-      <div class="progress-card-icon">${escHtml(group.icon)}</div>
+      <div class="progress-card-icon">${workoutIcon(group.icon, 24)}</div>
       <div class="progress-card-name">${escHtml(group.name)}</div>
       <div class="progress-card-foot">
         <div class="progress-card-sessions">${group.sessions.length} ${sessWord}</div>
@@ -644,7 +661,7 @@ function deleteHistoryItem(origIdx) {
 function openProgressDetail(group) {
   progressDetailWorkout = group.name;
 
-  document.getElementById('pdet-header-icon').textContent = group.icon;
+  document.getElementById('pdet-header-icon').innerHTML = workoutIcon(group.icon, 20);
   document.getElementById('pdet-header-name').textContent = group.name;
 
   document.getElementById('pdet-sum-sessions').textContent = group.sessions.length;
@@ -952,7 +969,6 @@ function saveWorkout() {
     return;
   }
 
-  const icons = ['💪', '🏃', '🔥', '⚡', '🎯', '🏋️', '🤸', '🚴'];
   const workout = {
     id: Date.now(),
     name,
@@ -965,7 +981,7 @@ function saveWorkout() {
     musicName:         formMusic.work.blob ? formMusic.work.blob.name : null,
     musicNameRest:     formMusic.rest.blob ? formMusic.rest.blob.name : null,
     musicNameFin:      formMusic.fin.blob  ? formMusic.fin.blob.name  : null,
-    icon: icons[Math.floor(Math.random() * icons.length)],
+    icon: ICON_KEYS[Math.floor(Math.random() * ICON_KEYS.length)],
     createdAt: new Date().toISOString(),
   };
 
@@ -1339,7 +1355,7 @@ function showResults() {
   history.unshift({
     id: Date.now(),
     workoutName: workout.name,
-    icon: workout.icon || '💪',
+    icon: workout.icon || 'zap',
     rounds: workout.intervals,
     totalTime: timer.totalElapsed,
     exercises: workout.exercises.length,
