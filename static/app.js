@@ -938,12 +938,6 @@ function rebuildExerciseNums() {
 function makeSortable(list, itemSel, handleSel, onEnd) {
   let dragEl = null, startY = 0, dy = 0;
 
-  function start(clientY, el) {
-    dragEl = el; startY = clientY; dy = 0;
-    dragEl.classList.add('ex-dragging');
-    vibrate([15]);
-  }
-
   function move(clientY) {
     if (!dragEl) return;
     dy = clientY - startY;
@@ -966,11 +960,20 @@ function makeSortable(list, itemSel, handleSel, onEnd) {
     }
   }
 
-  function end() {
+  // Named handlers added to document so scroll containers can't steal the gesture
+  function tmove(e) {
+    if (!dragEl) return;
+    e.preventDefault();
+    move(e.touches[0].clientY);
+  }
+  function tend() {
     if (!dragEl) return;
     dragEl.classList.remove('ex-dragging');
     dragEl.style.transform = '';
     dragEl = null;
+    document.removeEventListener('touchmove', tmove);
+    document.removeEventListener('touchend', tend);
+    document.removeEventListener('touchcancel', tend);
     onEnd();
   }
 
@@ -980,15 +983,13 @@ function makeSortable(list, itemSel, handleSel, onEnd) {
     const item = handle.closest(itemSel);
     if (!item) return;
     e.preventDefault();
-    start(e.touches[0].clientY, item);
+    dragEl = item; startY = e.touches[0].clientY; dy = 0;
+    dragEl.classList.add('ex-dragging');
+    vibrate([15]);
+    document.addEventListener('touchmove', tmove, { passive: false });
+    document.addEventListener('touchend', tend);
+    document.addEventListener('touchcancel', tend);
   }, { passive: false });
-  list.addEventListener('touchmove', (e) => {
-    if (!dragEl) return;
-    e.preventDefault();
-    move(e.touches[0].clientY);
-  }, { passive: false });
-  list.addEventListener('touchend', end);
-  list.addEventListener('touchcancel', end);
 
   list.addEventListener('mousedown', (e) => {
     const handle = e.target.closest(handleSel);
@@ -996,9 +997,19 @@ function makeSortable(list, itemSel, handleSel, onEnd) {
     const item = handle.closest(itemSel);
     if (!item) return;
     e.preventDefault();
-    start(e.clientY, item);
+    dragEl = item; startY = e.clientY; dy = 0;
+    dragEl.classList.add('ex-dragging');
+    vibrate([15]);
     const mm = (ev) => move(ev.clientY);
-    const mu = () => { end(); document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); };
+    const mu = () => {
+      if (!dragEl) return;
+      dragEl.classList.remove('ex-dragging');
+      dragEl.style.transform = '';
+      dragEl = null;
+      document.removeEventListener('mousemove', mm);
+      document.removeEventListener('mouseup', mu);
+      onEnd();
+    };
     document.addEventListener('mousemove', mm);
     document.addEventListener('mouseup', mu);
   });
