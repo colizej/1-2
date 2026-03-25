@@ -415,7 +415,11 @@ function openDetail(w) {
     const row = document.createElement('div');
     row.className = 'detail-exercise-row';
     const dur = ex.duration || w.work;
-    row.innerHTML = `<span class="detail-ex-num">${i + 1}</span><span class="detail-ex-name">${escHtml(ex.name)}</span><span class="detail-ex-dur">${fmtSec(dur)}</span>`;
+    const rst = ex.rest !== undefined ? ex.rest : w.rest;
+    const restHtml = rst > 0
+      ? `<span class="detail-ex-rest">↓ ${fmtSec(rst)}</span>`
+      : `<span class="detail-ex-rest detail-ex-rest-none">↓ —</span>`;
+    row.innerHTML = `<span class="detail-ex-num">${i + 1}</span><span class="detail-ex-name">${escHtml(ex.name)}</span>${restHtml}<span class="detail-ex-dur">${fmtSec(dur)}</span>`;
     exList.appendChild(row);
   });
 
