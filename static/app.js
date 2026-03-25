@@ -929,26 +929,20 @@ function rebuildExerciseNums() {
 function initExerciseDragDrop() {
   const list = document.getElementById('exercises-list');
   let dragEl = null;
-  let prevY = 0;
+  let startY = 0;
   let dy = 0;
 
-  list.addEventListener('touchstart', (e) => {
-    const handle = e.target.closest('.ex-drag-handle');
-    if (!handle) return;
-    e.preventDefault();
-    dragEl = handle.closest('.exercise-item');
-    prevY = e.touches[0].clientY;
+  function onStart(clientY, el) {
+    dragEl = el;
+    startY = clientY;
     dy = 0;
     dragEl.classList.add('ex-dragging');
     vibrate([15]);
-  }, { passive: false });
+  }
 
-  list.addEventListener('touchmove', (e) => {
+  function onMove(clientY) {
     if (!dragEl) return;
-    e.preventDefault();
-    const y = e.touches[0].clientY;
-    dy += y - prevY;
-    prevY = y;
+    dy = clientY - startY;
     dragEl.style.transform = `translateY(${dy}px)`;
 
     const dragRect = dragEl.getBoundingClientRect();
@@ -961,21 +955,19 @@ function initExerciseDragDrop() {
         const dragIdx = [...list.children].indexOf(dragEl);
         const sibIdx  = [...list.children].indexOf(sib);
         dragIdx < sibIdx ? list.insertBefore(sib, dragEl) : list.insertBefore(dragEl, sib);
-        // Recalibrate dy so visual position stays the same after DOM reorder
-        const naturalNew = dragEl.getBoundingClientRect().top - dy;
-        dy = dragRect.top - naturalNew;
+        const newNaturalTop = dragEl.getBoundingClientRect().top - dy;
+        dy = dragRect.top - newNaturalTop;
         dragEl.style.transform = `translateY(${dy}px)`;
         vibrate([8]);
         break;
       }
     }
-  }, { passive: false });
+  }
 
-  function endDrag() {
+  function onEnd() {
     if (!dragEl) return;
     dragEl.classList.remove('ex-dragging');
     dragEl.style.transform = '';
-    // Sync formExercises to new DOM order
     const newOrder = [...list.querySelectorAll('.exercise-item')]
       .map(el => formExercises.find(ex => String(ex.id) === el.dataset.id))
       .filter(Boolean);
@@ -985,8 +977,32 @@ function initExerciseDragDrop() {
     dragEl = null;
   }
 
-  list.addEventListener('touchend', endDrag);
-  list.addEventListener('touchcancel', endDrag);
+  // Touch
+  list.addEventListener('touchstart', (e) => {
+    const handle = e.target.closest('.ex-drag-handle');
+    if (!handle) return;
+    e.preventDefault();
+    onStart(e.touches[0].clientY, handle.closest('.exercise-item'));
+  }, { passive: false });
+  list.addEventListener('touchmove', (e) => {
+    if (!dragEl) return;
+    e.preventDefault();
+    onMove(e.touches[0].clientY);
+  }, { passive: false });
+  list.addEventListener('touchend', onEnd);
+  list.addEventListener('touchcancel', onEnd);
+
+  // Mouse (desktop)
+  list.addEventListener('mousedown', (e) => {
+    const handle = e.target.closest('.ex-drag-handle');
+    if (!handle) return;
+    e.preventDefault();
+    onStart(e.clientY, handle.closest('.exercise-item'));
+    const onMM = (ev) => onMove(ev.clientY);
+    const onMU = () => { onEnd(); document.removeEventListener('mousemove', onMM); document.removeEventListener('mouseup', onMU); };
+    document.addEventListener('mousemove', onMM);
+    document.addEventListener('mouseup', onMU);
+  });
 }
 
 function saveWorkout() {
