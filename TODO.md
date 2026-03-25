@@ -11,6 +11,8 @@
 - **SVG иконки** — заменены emoji на векторные stroke-иконки, градиентный фон
 - **SEO** — `meta description`, `robots.txt` (Allow / Disallow), `sitemap.xml`, тэглайн-гравировка
 - **Удалён .DS_Store** из репо, добавлен в `.gitignore`
+- **Google Analytics 4** — подключён трекинг `G-1D6J41RLMG`
+- **Google Search Console** — верификация, sitemap отправлен
 
 ---
 
