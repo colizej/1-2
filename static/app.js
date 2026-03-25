@@ -561,7 +561,7 @@ function openEditScreen(w) {
 const RU_DAYS = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
 const RU_MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 
-let progressDetailIdx = null;
+let progressDetailWorkout = null; // workout name key for current detail
 
 function renderProgress() {
   const list = document.getElementById('workouts-list');
@@ -571,15 +571,37 @@ function renderProgress() {
   const history = JSON.parse(localStorage.getItem('odindva_history') || '[]');
   if (history.length === 0) return;
 
+  // Group by workout name
+  const groups = {};
+  history.forEach((item, idx) => {
+    const key = item.workoutName;
+    if (!groups[key]) {
+      groups[key] = {
+        name: key,
+        icon: item.icon || '💪',
+        sessions: [],
+        totalTime: 0,
+        totalExercises: 0,
+        lastDate: item.date,
+      };
+    }
+    groups[key].sessions.push({ ...item, origIdx: idx });
+    groups[key].totalTime += item.totalTime || 0;
+    groups[key].totalExercises += item.exercises || 0;
+  });
+
+  const cards = Object.values(groups).sort(
+    (a, b) => new Date(b.lastDate) - new Date(a.lastDate)
+  );
+
   const section = document.createElement('div');
   section.className = 'progress-section';
 
-  const totalTime = history.reduce((s, it) => s + (it.totalTime || 0), 0);
   const header = document.createElement('div');
   header.className = 'progress-header';
   header.innerHTML = `
     <span class="progress-header-title">Прогресс тренировок</span>
-    <span class="progress-header-stats">${history.length} · ${fmtMin(totalTime)}</span>
+    <span class="progress-header-stats">${history.length} сессий</span>
   `;
   section.appendChild(header);
 
@@ -587,93 +609,102 @@ function renderProgress() {
   cardsWrap.className = 'progress-cards';
   section.appendChild(cardsWrap);
 
-  history.slice(0, 50).forEach((item, origIdx) => {
-    const d = new Date(item.date);
-    const dayNum = d.getDate();
-    const monthShort = RU_MONTHS[d.getMonth()].slice(0, 3);
-    const dayShort = ['вс','пн','вт','ср','чт','пт','сб'][d.getDay()];
+  const RU_MONTHS_SHORT = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
 
-    const strip = document.createElement('div');
-    strip.className = 'progress-strip';
-    strip.style.animationDelay = `${origIdx * 0.04}s`;
-    strip.innerHTML = `
-      <div class="progress-strip-date">
-        <div class="progress-strip-day-num">${dayNum}</div>
-        <div class="progress-strip-day-label">${monthShort} ${dayShort}</div>
-      </div>
-      <div class="progress-strip-divider"></div>
-      <div class="progress-strip-icon">${item.icon || '💪'}</div>
-      <div class="progress-strip-body">
-        <div class="progress-strip-name">${escHtml(item.workoutName)}</div>
-        <div class="progress-strip-meta">${item.exercises || 0} упр. · ${fmtMin(item.totalTime)}</div>
-      </div>
-      <div class="progress-strip-arrow">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+  cards.forEach((group, i) => {
+    const d = new Date(group.lastDate);
+    const lastDateStr = `${d.getDate()} ${RU_MONTHS_SHORT[d.getMonth()]}`;
+    const sessWord = group.sessions.length === 1 ? 'раз' :
+      (group.sessions.length < 5 ? 'раза' : 'раз');
+
+    const card = document.createElement('div');
+    card.className = 'progress-card';
+    card.style.animationDelay = `${i * 0.06}s`;
+    card.innerHTML = `
+      <div class="progress-card-icon">${escHtml(group.icon)}</div>
+      <div class="progress-card-name">${escHtml(group.name)}</div>
+      <div class="progress-card-foot">
+        <div class="progress-card-sessions">${group.sessions.length} ${sessWord}</div>
+        <div class="progress-card-meta">${fmtMin(group.totalTime)} · ${lastDateStr}</div>
       </div>
     `;
-    strip.addEventListener('click', () => openProgressDetail(item, origIdx));
-    cardsWrap.appendChild(strip);
+    card.addEventListener('click', () => openProgressDetail(group));
+    cardsWrap.appendChild(card);
   });
 
   list.appendChild(section);
 }
 
-function deleteHistoryItem(idx) {
+function deleteHistoryItem(origIdx) {
   const history = JSON.parse(localStorage.getItem('odindva_history') || '[]');
-  history.splice(idx, 1);
+  history.splice(origIdx, 1);
   localStorage.setItem('odindva_history', JSON.stringify(history));
-  renderProgress();
 }
 
-function openProgressDetail(item, origIdx) {
-  progressDetailIdx = origIdx;
-  document.getElementById('pdet-icon').textContent = item.icon || '💪';
-  document.getElementById('pdet-name').textContent = item.workoutName;
+function openProgressDetail(group) {
+  progressDetailWorkout = group.name;
 
-  const d = new Date(item.date);
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  document.getElementById('pdet-date').textContent =
-    `${RU_DAYS[d.getDay()]}, ${d.getDate()} ${RU_MONTHS[d.getMonth()]} · ${hh}:${mm}`;
+  document.getElementById('pdet-header-icon').textContent = group.icon;
+  document.getElementById('pdet-header-name').textContent = group.name;
 
-  document.getElementById('pdet-stat-time').textContent = fmtMin(item.totalTime);
-  document.getElementById('pdet-stat-ex').textContent = item.exercises || 0;
+  document.getElementById('pdet-sum-sessions').textContent = group.sessions.length;
+  document.getElementById('pdet-sum-time').textContent = fmtMin(group.totalTime);
+  document.getElementById('pdet-sum-ex').textContent = group.totalExercises;
 
-  const log = item.log || [];
-  const chartEl = document.getElementById('pdet-chart');
-  const logEl = document.getElementById('pdet-log');
-  chartEl.innerHTML = '';
-  logEl.innerHTML = '';
+  const tbody = document.getElementById('pdet-tbody');
+  tbody.innerHTML = '';
 
-  if (log.length > 0) {
-    const maxDur = Math.max(...log.map(e => e.duration));
-    log.forEach(entry => {
-      const pct = maxDur > 0 ? (entry.duration / maxDur * 100) : 0;
-      const row = document.createElement('div');
-      row.className = 'pdet-chart-row';
-      row.innerHTML = `
-        <div class="pdet-chart-label">${escHtml(entry.exercise)}</div>
-        <div class="pdet-chart-track"><div class="pdet-chart-fill"></div></div>
-        <div class="pdet-chart-time">${fmtSec(entry.duration)}</div>
-      `;
-      chartEl.appendChild(row);
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        row.querySelector('.pdet-chart-fill').style.width = pct + '%';
-      }));
+  const RU_DAYS_SHORT = ['вс','пн','вт','ср','чт','пт','сб'];
+  const RU_MONTHS_SHORT = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
 
-      const logRow = document.createElement('div');
-      logRow.className = 'pdet-log-row';
-      logRow.innerHTML = `
-        <span class="pdet-log-num">${entry.round}</span>
-        <span class="pdet-log-name">${escHtml(entry.exercise)}</span>
-        <span class="pdet-log-time">${fmtSec(entry.duration)}</span>
-      `;
-      logEl.appendChild(logRow);
+  group.sessions.forEach(session => {
+    const d = new Date(session.date);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const dateMain = `${d.getDate()} ${RU_MONTHS_SHORT[d.getMonth()]}`;
+    const dateSub = `${RU_DAYS_SHORT[d.getDay()]} ${hh}:${mm}`;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="pdet-td-date">
+        ${dateMain}
+        <div class="pdet-td-date-sub">${dateSub}</div>
+      </td>
+      <td class="pdet-td-time">${fmtMin(session.totalTime)}</td>
+      <td class="pdet-td-ex">${session.exercises || 0}</td>
+      <td class="pdet-td-del">
+        <button class="pdet-del-btn" aria-label="Удалить">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+      </td>
+    `;
+    tr.querySelector('.pdet-del-btn').addEventListener('click', () => {
+      showConfirm('Удалить запись?', () => {
+        deleteHistoryItem(session.origIdx);
+        tr.style.transition = 'opacity 0.2s';
+        tr.style.opacity = '0';
+        setTimeout(() => {
+          tr.remove();
+          // update summary
+          group.sessions = group.sessions.filter(s => s !== session);
+          group.totalTime -= session.totalTime || 0;
+          group.totalExercises -= session.exercises || 0;
+          document.getElementById('pdet-sum-sessions').textContent = group.sessions.length;
+          document.getElementById('pdet-sum-time').textContent = fmtMin(group.totalTime);
+          document.getElementById('pdet-sum-ex').textContent = group.totalExercises;
+          renderProgress();
+          if (group.sessions.length === 0) {
+            const home = document.getElementById('screen-home');
+            const det = document.getElementById('screen-progress-detail');
+            det.classList.remove('active');
+            home.classList.remove('slide-out');
+            home.classList.add('active');
+          }
+        }, 220);
+      });
     });
-  } else {
-    chartEl.innerHTML = '<div class="pdet-empty">Нет данных упражнений</div>';
-    logEl.innerHTML = '<div class="pdet-empty">—</div>';
-  }
+    tbody.appendChild(tr);
+  });
 
   showScreen('screen-progress-detail');
 }
@@ -1473,17 +1504,6 @@ document.getElementById('btn-back-progress').addEventListener('click', () => {
   det.classList.remove('active');
   home.classList.remove('slide-out');
   home.classList.add('active');
-});
-
-document.getElementById('pdet-delete').addEventListener('click', () => {
-  showConfirm('Удалить запись?', () => {
-    const home = document.getElementById('screen-home');
-    const det = document.getElementById('screen-progress-detail');
-    det.classList.remove('active');
-    home.classList.remove('slide-out');
-    home.classList.add('active');
-    if (progressDetailIdx !== null) deleteHistoryItem(progressDetailIdx);
-  });
 });
 
 /* ===== WIRE UP BUTTONS ===== */

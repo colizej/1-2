@@ -1262,14 +1262,18 @@ html, body {
 }
 
 /* ===== PROGRESS SECTION ===== */
-.progress-section { margin-top: 28px; }
+.progress-section {
+  margin-top: 28px;
+  margin-left: -16px;
+  margin-right: -16px;
+}
 
 .progress-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 10px;
-  padding: 0 2px;
+  margin-bottom: 12px;
+  padding: 0 16px;
 }
 .progress-header-title {
   font-size: 11px;
@@ -1284,229 +1288,200 @@ html, body {
 }
 
 .progress-cards {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 16px;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 16px 16px;
+  scrollbar-width: none;
+}
+.progress-cards::-webkit-scrollbar { display: none; }
+
+.progress-card {
+  min-width: 155px;
+  max-width: 155px;
+  height: 175px;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  overflow: hidden;
-}
-
-.progress-strip {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px 10px 12px;
+  padding: 14px;
+  flex-shrink: 0;
   cursor: pointer;
-  transition: background 0.12s;
-  border-bottom: 1px solid var(--border);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.12s, border-color 0.12s;
   animation: slideUp 0.35s cubic-bezier(0.4,0,0.2,1) both;
 }
-.progress-strip:last-child { border-bottom: none; }
-.progress-strip:active { background: var(--surface2); }
-
-.progress-strip-date {
-  flex-shrink: 0;
-  width: 36px;
-  text-align: center;
+.progress-card:active {
+  transform: scale(0.97);
+  border-color: var(--accent);
 }
-.progress-strip-day-num {
-  font-size: 18px;
+
+.progress-card-icon {
+  font-size: 28px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.progress-card-name {
+  font-size: 14px;
   font-weight: 700;
-  line-height: 1;
   color: var(--text);
-}
-.progress-strip-day-label {
-  font-size: 10px;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
-
-.progress-strip-divider {
-  width: 1px;
-  height: 32px;
-  background: var(--border);
-  flex-shrink: 0;
-}
-
-.progress-strip-icon {
-  font-size: 18px;
-  flex-shrink: 0;
-  line-height: 1;
-}
-.progress-strip-body {
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   flex: 1;
-  min-width: 0;
 }
-.progress-strip-name {
+.progress-card-foot {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.progress-card-sessions {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
+  font-weight: 700;
+  color: var(--accent);
+}
+.progress-card-meta {
+  font-size: 11px;
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.progress-strip-meta {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-.progress-strip-arrow {
-  color: var(--text-muted);
-  flex-shrink: 0;
-  opacity: 0.5;
-}
 
 /* ===== PROGRESS DETAIL SCREEN ===== */
+.pdet-header-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 16px;
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+}
+#pdet-header-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .pdet-scroll {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 20px 20px 40px;
+  padding: 16px 16px 40px;
 }
 
-.pdet-hero {
+.pdet-summary-row {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 20px;
-}
-.pdet-icon {
-  font-size: 40px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-.pdet-name {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1.2;
-}
-.pdet-date {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-.pdet-stats {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-.pdet-stat {
-  flex: 1;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: var(--radius);
+  padding: 14px 0;
+  margin-bottom: 20px;
+}
+.pdet-sum-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
 }
-.pdet-stat-value {
-  font-size: 22px;
+.pdet-sum-divider {
+  width: 1px;
+  height: 32px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+.pdet-sum-value {
+  font-size: 20px;
   font-weight: 700;
   color: var(--accent);
+  line-height: 1;
 }
-.pdet-stat-label {
-  font-size: 11px;
+.pdet-sum-label {
+  font-size: 10px;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.pdet-section-label {
+.pdet-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.pdet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.pdet-table thead tr {
+  background: var(--surface2);
+}
+.pdet-table th {
+  padding: 10px 12px;
+  text-align: left;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--text-muted);
-  margin-bottom: 10px;
-}
-
-.pdet-chart { margin-bottom: 24px; }
-.pdet-chart-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-.pdet-chart-label {
-  font-size: 11px;
-  color: var(--text-muted);
-  width: 90px;
-  flex-shrink: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: right;
-}
-.pdet-chart-track {
-  flex: 1;
-  height: 6px;
-  background: var(--surface2);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.pdet-chart-fill {
-  height: 100%;
-  background: var(--accent);
-  border-radius: 3px;
-  width: 0;
-  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
-}
-.pdet-chart-time {
-  font-size: 11px;
-  color: var(--text-muted);
-  width: 30px;
-  flex-shrink: 0;
-  text-align: right;
-}
-
-.pdet-log { margin-bottom: 28px; }
-.pdet-log-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 0;
   border-bottom: 1px solid var(--border);
 }
-.pdet-log-row:last-child { border-bottom: none; }
-.pdet-log-num {
-  font-size: 12px;
-  color: var(--text-muted);
-  width: 20px;
-  flex-shrink: 0;
-  text-align: center;
+.pdet-th-num { text-align: right; }
+.pdet-th-del { width: 36px; }
+.pdet-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
 }
-.pdet-log-name {
-  flex: 1;
-  font-size: 13px;
-  color: var(--text);
+.pdet-table tbody tr:last-child { border-bottom: none; }
+.pdet-table tbody tr:active { background: var(--surface2); }
+.pdet-table td {
+  padding: 11px 12px;
+  vertical-align: middle;
+}
+.pdet-td-date { color: var(--text); }
+.pdet-td-date-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.pdet-td-time {
+  text-align: right;
+  font-weight: 700;
+  color: var(--accent);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-.pdet-log-time {
-  font-size: 12px;
-  color: var(--text-muted);
-  flex-shrink: 0;
+.pdet-td-ex {
+  text-align: right;
+  color: var(--rest-color);
+  font-weight: 700;
 }
-.pdet-empty {
-  font-size: 13px;
-  color: var(--text-muted);
+.pdet-td-del {
   text-align: center;
-  padding: 16px 0;
+  width: 36px;
 }
-.btn-danger-outline {
-  width: 100%;
-  padding: 14px;
+.pdet-del-btn {
   background: none;
-  border: 1px solid rgba(255,111,132,0.3);
-  border-radius: var(--radius);
-  color: var(--accent2);
-  font-size: 15px;
-  font-weight: 600;
+  border: none;
+  color: var(--text-muted);
+  opacity: 0.4;
   cursor: pointer;
-  transition: background 0.15s;
+  padding: 4px;
+  border-radius: 6px;
+  line-height: 0;
+  transition: opacity 0.15s, color 0.15s;
 }
-.btn-danger-outline:active { background: rgba(255,111,132,0.1); }
+.pdet-del-btn:active { opacity: 1; color: var(--accent2); }
 
 /* ===== TICK FLASH ===== */
 #tick-flash {

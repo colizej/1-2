@@ -326,36 +326,43 @@
       <button class="btn-back" id="btn-back-progress" aria-label="Назад">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <h2>Прогресс</h2>
+      <div class="pdet-header-title">
+        <span id="pdet-header-icon">💪</span>
+        <span id="pdet-header-name">Тренировка</span>
+      </div>
       <div style="width:40px"></div>
     </header>
     <div class="pdet-scroll">
-      <div class="pdet-hero">
-        <div class="pdet-icon" id="pdet-icon">💪</div>
-        <div>
-          <div class="pdet-name" id="pdet-name">Тренировка</div>
-          <div class="pdet-date" id="pdet-date"></div>
+      <div class="pdet-summary-row">
+        <div class="pdet-sum-item">
+          <span class="pdet-sum-value" id="pdet-sum-sessions">0</span>
+          <span class="pdet-sum-label">сессий</span>
+        </div>
+        <div class="pdet-sum-divider"></div>
+        <div class="pdet-sum-item">
+          <span class="pdet-sum-value" id="pdet-sum-time">—</span>
+          <span class="pdet-sum-label">итого</span>
+        </div>
+        <div class="pdet-sum-divider"></div>
+        <div class="pdet-sum-item">
+          <span class="pdet-sum-value" id="pdet-sum-ex">0</span>
+          <span class="pdet-sum-label">упражнений</span>
         </div>
       </div>
 
-      <div class="pdet-stats">
-        <div class="pdet-stat">
-          <span class="pdet-stat-value" id="pdet-stat-time">—</span>
-          <span class="pdet-stat-label">Время</span>
-        </div>
-        <div class="pdet-stat">
-          <span class="pdet-stat-value" id="pdet-stat-ex">—</span>
-          <span class="pdet-stat-label">Упражнений</span>
-        </div>
+      <div class="pdet-table-wrap">
+        <table class="pdet-table">
+          <thead>
+            <tr>
+              <th>Дата</th>
+              <th class="pdet-th-num">Время</th>
+              <th class="pdet-th-num">Упр.</th>
+              <th class="pdet-th-del"></th>
+            </tr>
+          </thead>
+          <tbody id="pdet-tbody"></tbody>
+        </table>
       </div>
-
-      <div class="pdet-section-label">График</div>
-      <div class="pdet-chart" id="pdet-chart"></div>
-
-      <div class="pdet-section-label">Упражнения</div>
-      <div class="pdet-log" id="pdet-log"></div>
-
-      <button class="btn-danger-outline" id="pdet-delete">Удалить запись</button>
     </div>
   </div>
 
