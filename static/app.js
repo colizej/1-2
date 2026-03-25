@@ -531,9 +531,15 @@ document.getElementById('sheet-share').addEventListener('click', async () => {
   const filename = `odindva-${w.name.replace(/[^a-zA-Zа-яА-Я0-9]/g, '_')}-${date}.json`;
   const file = new File([blob], filename, { type: 'application/json' });
   try {
-    await navigator.share({ title: w.name, files: [file] });
+    // Try sharing with file first (iOS, macOS Safari, Android Chrome)
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ title: w.name, files: [file] });
+    } else {
+      // Desktop Chrome/Edge: share without file — opens OS share sheet
+      await navigator.share({ title: w.name, text: `Тренировка «${w.name}» из ОДИН·ДВА — https://odin-dva.ru` });
+    }
   } catch (err) {
-    if (err.name !== 'AbortError') exportWorkout(w); // fallback to download
+    if (err.name !== 'AbortError') exportWorkout(w); // last resort: download
   }
 });
 document.getElementById('sheet-cancel').addEventListener('click', closeGearSheet);
@@ -1797,8 +1803,8 @@ function init() {
   initExerciseDragDrop();
   renderHome();
 
-  // Hide share button if Web Share API unavailable or can't share files
-  if (!navigator.share || !navigator.canShare) {
+  // Hide share button only if Web Share API is completely unavailable
+  if (!navigator.share) {
     const btn = document.getElementById('sheet-share');
     if (btn) btn.style.display = 'none';
   }
