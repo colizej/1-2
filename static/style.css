@@ -381,6 +381,27 @@ html, body {
   gap: 10px;
 }
 
+.ex-drag-handle {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  opacity: 0.4;
+  cursor: grab;
+  padding: 4px 2px;
+  flex-shrink: 0;
+  touch-action: none;
+}
+.ex-drag-handle:active { cursor: grabbing; opacity: 0.8; }
+
+.exercise-item.ex-dragging {
+  opacity: 0.75;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  border-color: var(--accent);
+  background: var(--surface2);
+  z-index: 10;
+  position: relative;
+}
+
 .ex-timings {
   display: flex;
   flex-direction: column;

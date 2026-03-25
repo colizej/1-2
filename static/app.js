@@ -834,6 +834,9 @@ function addExercise(name = '', duration = null, rest = null) {
   item.dataset.id = ex.id;
   item.innerHTML = `
     <div class="ex-header">
+      <div class="ex-drag-handle" aria-label="Перетащить">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="16" x2="20" y2="16"/></svg>
+      </div>
       <div class="exercise-num">${idx + 1}</div>
       <input type="text" class="exercise-input" placeholder="Название упражнения" value="${escHtml(name)}" />
       <button class="btn-del-exercise" aria-label="Удалить">
@@ -920,6 +923,70 @@ function rebuildExerciseNums() {
   document.querySelectorAll('.exercise-item .exercise-num').forEach((el, i) => {
     el.textContent = i + 1;
   });
+}
+
+/* ===== DRAG & DROP EXERCISES ===== */
+function initExerciseDragDrop() {
+  const list = document.getElementById('exercises-list');
+  let dragEl = null;
+  let prevY = 0;
+  let dy = 0;
+
+  list.addEventListener('touchstart', (e) => {
+    const handle = e.target.closest('.ex-drag-handle');
+    if (!handle) return;
+    e.preventDefault();
+    dragEl = handle.closest('.exercise-item');
+    prevY = e.touches[0].clientY;
+    dy = 0;
+    dragEl.classList.add('ex-dragging');
+    vibrate([15]);
+  }, { passive: false });
+
+  list.addEventListener('touchmove', (e) => {
+    if (!dragEl) return;
+    e.preventDefault();
+    const y = e.touches[0].clientY;
+    dy += y - prevY;
+    prevY = y;
+    dragEl.style.transform = `translateY(${dy}px)`;
+
+    const dragRect = dragEl.getBoundingClientRect();
+    const dragMid = dragRect.top + dragRect.height / 2;
+
+    for (const sib of list.querySelectorAll('.exercise-item')) {
+      if (sib === dragEl) continue;
+      const sibRect = sib.getBoundingClientRect();
+      if (Math.abs(dragMid - (sibRect.top + sibRect.height / 2)) < sibRect.height * 0.5) {
+        const dragIdx = [...list.children].indexOf(dragEl);
+        const sibIdx  = [...list.children].indexOf(sib);
+        dragIdx < sibIdx ? list.insertBefore(sib, dragEl) : list.insertBefore(dragEl, sib);
+        // Recalibrate dy so visual position stays the same after DOM reorder
+        const naturalNew = dragEl.getBoundingClientRect().top - dy;
+        dy = dragRect.top - naturalNew;
+        dragEl.style.transform = `translateY(${dy}px)`;
+        vibrate([8]);
+        break;
+      }
+    }
+  }, { passive: false });
+
+  function endDrag() {
+    if (!dragEl) return;
+    dragEl.classList.remove('ex-dragging');
+    dragEl.style.transform = '';
+    // Sync formExercises to new DOM order
+    const newOrder = [...list.querySelectorAll('.exercise-item')]
+      .map(el => formExercises.find(ex => String(ex.id) === el.dataset.id))
+      .filter(Boolean);
+    formExercises.length = 0;
+    formExercises.push(...newOrder);
+    rebuildExerciseNums();
+    dragEl = null;
+  }
+
+  list.addEventListener('touchend', endDrag);
+  list.addEventListener('touchcancel', endDrag);
 }
 
 function saveWorkout() {
@@ -1640,10 +1707,11 @@ document.getElementById('install-dismiss').addEventListener('click', () => {
 
 /* ===== INIT ===== */
 function init() {
-  installDemoMusicIfNeeded(); // start background fetch immediately
-  loadBeepBuffers();          // pre-decode beep audio (no gesture needed)
+  installDemoMusicIfNeeded();
+  loadBeepBuffers();
   loadWorkouts();
-  cleanOrphanedMusicBlobs();  // remove stale IndexedDB music blobs
+  cleanOrphanedMusicBlobs();
+  initExerciseDragDrop();
   renderHome();
 
   // Register service worker
