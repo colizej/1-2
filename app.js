@@ -417,9 +417,9 @@ function openDetail(w) {
     const dur = ex.duration || w.work;
     const rst = ex.rest !== undefined ? ex.rest : w.rest;
     const restHtml = rst > 0
-      ? `<span class="detail-ex-rest">↓ ${fmtSec(rst)}</span>`
-      : `<span class="detail-ex-rest detail-ex-rest-none">↓ —</span>`;
-    row.innerHTML = `<span class="detail-ex-num">${i + 1}</span><span class="detail-ex-name">${escHtml(ex.name)}</span>${restHtml}<span class="detail-ex-dur">${fmtSec(dur)}</span>`;
+      ? `<span class="detail-ex-rest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M17 21a9 9 0 1 1 0-18 7 7 0 1 0 0 18z"/></svg> ${fmtSec(rst)}</span>`
+      : '';
+    row.innerHTML = `<span class="detail-ex-num">${i + 1}</span><span class="detail-ex-name">${escHtml(ex.name)}</span><span class="detail-ex-dur">${fmtSec(dur)}</span>${restHtml}`;
     exList.appendChild(row);
   });
 

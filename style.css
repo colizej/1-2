@@ -980,7 +980,7 @@ html, body {
 
 .detail-ex-name { font-size: 15px; font-weight: 600; flex: 1; }
 .detail-ex-dur  { font-size: 13px; font-weight: 700; color: var(--accent); flex-shrink: 0; }
-.detail-ex-rest { font-size: 12px; color: var(--text-secondary); flex-shrink: 0; }
+.detail-ex-rest { display: flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-secondary); flex-shrink: 0; opacity: 0.7; }
 .detail-ex-rest-none { opacity: 0.35; }
 
 .detail-music-row {
