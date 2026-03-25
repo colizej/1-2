@@ -423,6 +423,22 @@ function openDetail(w) {
     row.innerHTML = `<span class="detail-ex-drag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="16" x2="20" y2="16"/></svg></span><span class="detail-ex-num">${i + 1}</span><span class="detail-ex-name">${escHtml(ex.name)}</span><span class="detail-ex-dur">${fmtSec(dur)}</span>${restHtml}`;
     exList.appendChild(row);
   });
+  // Total time row
+  const prepTime = w.prepTime || 0;
+  const totalSec = prepTime + w.exercises.reduce((sum, ex) => {
+    const dur = ex.duration || w.work;
+    const rst = ex.rest !== undefined ? ex.rest : w.rest;
+    return sum + dur + rst;
+  }, 0);
+  let totalRow = document.getElementById('detail-total-row');
+  if (!totalRow) {
+    totalRow = document.createElement('div');
+    totalRow.id = 'detail-total-row';
+    totalRow.className = 'detail-total-row';
+    exList.after(totalRow);
+  }
+  totalRow.textContent = `Итого ${fmtTotalTime(totalSec)}`;
+
   makeSortable(exList, '.detail-exercise-row', '.detail-ex-drag', () => {
     const items = [...exList.querySelectorAll('.detail-exercise-row')];
     const newOrder = items.map(el => detailWorkout.exercises.find(ex => String(ex.id) === el.dataset.id)).filter(Boolean);
