@@ -1368,7 +1368,7 @@ html, body {
   max-width: 130px;
   height: 130px;
   background: var(--surface);
-  border: 1.5px solid var(--accent);
+  border: 1.5px solid rgba(124, 111, 255, 0.35);
   border-radius: var(--radius);
   padding: 14px 12px;
   flex-shrink: 0;
