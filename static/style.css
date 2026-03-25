@@ -1368,7 +1368,7 @@ html, body {
   max-width: 130px;
   height: 130px;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--accent);
   border-radius: var(--radius);
   padding: 14px 12px;
   flex-shrink: 0;
@@ -1377,11 +1377,11 @@ html, body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: transform 0.12s, border-color 0.12s;
+  transition: transform 0.12s, opacity 0.12s;
 }
 .progress-card:active {
   transform: scale(0.96);
-  border-color: var(--accent);
+  opacity: 0.8;
 }
 
 .pcard-top {
@@ -1392,7 +1392,7 @@ html, body {
 .pcard-sessions {
   font-size: 32px;
   font-weight: 800;
-  color: var(--text);
+  color: var(--accent);
   line-height: 1;
 }
 .pcard-sessions-label {
@@ -1410,9 +1410,8 @@ html, body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  flex: 1;
+  max-height: calc(12px * 1.3 * 2);
   margin: 6px 0;
-  align-self: flex-start;
 }
 
 .pcard-bottom {

@@ -645,8 +645,8 @@ function renderProgress() {
 
   cards.forEach((group) => {
     const d = new Date(group.lastDate);
-    const sessWord = group.sessions.length === 1 ? 'раз' :
-      (group.sessions.length < 5 ? 'раза' : 'раз');
+    const sessWord = group.sessions.length === 1 ? 'сессия' :
+      (group.sessions.length < 5 ? 'сессии' : 'сессий');
 
     const card = document.createElement('div');
     card.className = 'progress-card';
