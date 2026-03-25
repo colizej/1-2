@@ -622,7 +622,7 @@ function openEditScreen(w) {
   document.getElementById('workout-name').value = w.name;
   document.getElementById('exercises-list').innerHTML = '';
   // Use addExercise to populate rows (handles duration controls + formExercises sync)
-  w.exercises.forEach(ex => addExercise(ex.name, ex.duration || w.work, ex.rest !== undefined ? ex.rest : w.rest));
+  w.exercises.forEach(ex => addExercise(ex.name, ex.duration || w.work, ex.rest !== undefined ? ex.rest : w.rest, true));
 
   updateStepperDisplay();
   // Mark as editing
@@ -913,7 +913,7 @@ function updateStepperDisplay() {
   document.getElementById('val-prepTime').textContent = formSettings.prepTime;
 }
 
-function addExercise(name = '', duration = null, rest = null) {
+function addExercise(name = '', duration = null, rest = null, silent = false) {
   const lastEx = formExercises.length > 0 ? formExercises[formExercises.length - 1] : null;
   const dur = (duration !== null && duration > 0) ? duration : (lastEx ? lastEx.duration : formSettings.work);
   const rst = (rest !== null && rest >= 0) ? rest : (lastEx ? lastEx.rest : formSettings.rest);
@@ -1011,8 +1011,10 @@ function addExercise(name = '', duration = null, rest = null) {
   });
 
   document.getElementById('exercises-list').appendChild(item);
-  item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  showToast('Упражнение добавлено');
+  if (!silent) {
+    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    showToast('Упражнение добавлено');
+  }
 }
 
 function rebuildExerciseNums() {
