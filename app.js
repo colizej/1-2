@@ -367,7 +367,7 @@ function renderHome() {
       <div class="workout-card-icon">${w.icon || '💪'}</div>
       <div class="workout-card-info">
         <div class="workout-card-name">${escHtml(w.name)}</div>
-        <div class="workout-card-meta">${w.intervals} упражнений · ${fmtSec(w.work)} работа</div>
+        <div class="workout-card-meta">${w.intervals} упражнений · ${fmtMin((w.prepTime || 0) + w.exercises.reduce((s, ex) => s + (ex.duration || 0) + (ex.rest || 0), 0))} итого</div>
       </div>
       <div class="workout-card-arrow">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
