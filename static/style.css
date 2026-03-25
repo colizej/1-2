@@ -184,6 +184,30 @@ html, body {
 .empty-state p { font-size: 18px; font-weight: 600; color: var(--text-muted); }
 .empty-state span { font-size: 13px; }
 
+.home-tagline {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 16px calc(10px + var(--safe-bottom));
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+.home-tagline span {
+  font-size: 10px;
+  color: rgba(136, 136, 153, 0.45);
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  user-select: none;
+}
+.home-tagline span:first-child {
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 9px;
+}
+
 .workout-card {
   background: var(--surface);
   border: 1px solid var(--border);
