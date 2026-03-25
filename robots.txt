@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Не индексировать служебные файлы PWA
+Disallow: /sw.js
+Disallow: /static/
+Disallow: /sounds/
+Disallow: /manifest.json
+
+Sitemap: https://odin-dva.ru/sitemap.xml
