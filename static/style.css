@@ -1452,7 +1452,7 @@ html, body {
   color: var(--text-muted);
   border-bottom: 1px solid var(--border);
 }
-.pdet-th-num { text-align: right; width: 60px; }
+.pdet-th-num { text-align: center; width: 60px; }
 .pdet-th-del { width: 40px; text-align: center; }
 .pdet-table tbody tr {
   border-bottom: 1px solid var(--border);
@@ -1471,14 +1471,14 @@ html, body {
   margin-top: 2px;
 }
 .pdet-td-time {
-  text-align: right;
+  text-align: center;
   width: 60px;
   font-weight: 700;
   color: var(--accent);
   white-space: nowrap;
 }
 .pdet-td-ex {
-  text-align: right;
+  text-align: center;
   width: 40px;
   color: var(--rest-color);
   font-weight: 700;
