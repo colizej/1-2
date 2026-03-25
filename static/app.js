@@ -637,7 +637,7 @@ function renderProgress() {
   section.appendChild(header);
 
   const rowsWrap = document.createElement('div');
-  rowsWrap.className = 'progress-list';
+  rowsWrap.className = 'progress-cards';
   section.appendChild(rowsWrap);
 
   const RU_MONTHS_SHORT = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
@@ -648,22 +648,21 @@ function renderProgress() {
     const sessWord = group.sessions.length === 1 ? 'раз' :
       (group.sessions.length < 5 ? 'раза' : 'раз');
 
-    const row = document.createElement('div');
-    row.className = 'progress-row';
-    row.innerHTML = `
-      <div class="progress-row-date">
-        <span class="prow-day">${d.getDate()}</span>
-        <span class="prow-month">${RU_MONTHS_SHORT[d.getMonth()]}</span>
-        <span class="prow-dow">${RU_DAYS_SHORT[d.getDay()]}</span>
+    const card = document.createElement('div');
+    card.className = 'progress-card';
+    card.innerHTML = `
+      <div class="pcard-top">
+        <span class="pcard-sessions">${group.sessions.length}</span>
+        <span class="pcard-sessions-label">${sessWord}</span>
       </div>
-      <div class="progress-row-body">
-        <div class="prow-name">${escHtml(group.name)}</div>
-        <div class="prow-meta">${group.sessions.length} ${sessWord} · ${fmtTotalTime(group.totalTime)}</div>
+      <div class="pcard-name">${escHtml(group.name)}</div>
+      <div class="pcard-bottom">
+        <span class="pcard-time">${fmtTotalTime(group.totalTime)}</span>
+        <span class="pcard-date">${d.getDate()} ${RU_MONTHS_SHORT[d.getMonth()]}</span>
       </div>
-      <div class="progress-row-arrow">›</div>
     `;
-    row.addEventListener('click', () => openProgressDetail(group));
-    rowsWrap.appendChild(row);
+    card.addEventListener('click', () => openProgressDetail(group));
+    rowsWrap.appendChild(card);
   });
 
   list.appendChild(section);
