@@ -221,9 +221,12 @@ async function playPhaseMusic(workoutId, phase) {
   const _wl = JSON.parse(localStorage.getItem('odindva_workouts') || '[]');
   const _ww = _wl.find(x => String(x.id) === String(workoutId));
   if (_ww && _ww.musicDisabled) return;
-  // Per-phase mute: stop any current music and skip
+  // Per-phase mute: save position of outgoing track, stop, skip
   const muteKey = { work: 'musicMutedWork', rest: 'musicMutedRest', fin: 'musicMutedFin' }[phase];
   if (_ww && muteKey && _ww[muteKey]) {
+    if (_phaseCurrentKey && _musicSource) {
+      _phaseSavedTimes.set(_phaseCurrentKey, _currentMusicPosition());
+    }
     if (_musicSource) { try { _musicSource.stop(); } catch(e) {} _musicSource = null; _phaseCurrentKey = null; }
     return;
   }
