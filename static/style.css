@@ -358,7 +358,7 @@ html, body {
   flex: 1;
   overflow-y: auto;
   padding: 20px 16px;
-  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .form-section { margin-bottom: 28px; }
@@ -540,8 +540,48 @@ html, body {
   font-size: 18px;
   font-weight: 700;
   color: var(--text);
-  min-width: 32px;
+  width: 44px;
   text-align: center;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  outline: none;
+  padding: 2px 0;
+  cursor: text;
+  touch-action: manipulation;
+  -moz-appearance: textfield;
+  transition: border-color 0.15s;
+}
+.ex-dur-val::-webkit-outer-spin-button,
+.ex-dur-val::-webkit-inner-spin-button,
+.ex-rest-val::-webkit-outer-spin-button,
+.ex-rest-val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.ex-dur-val:focus,
+.ex-rest-val:focus {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Inline number input — появляется при longpress на цифре */
+.ex-dur-inline-input {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  width: 54px;
+  text-align: center;
+  background: var(--surface2);
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  padding: 3px 4px;
+  outline: none;
+  -moz-appearance: textfield;
+  animation: durInputPop 0.15s ease;
+}
+.ex-dur-inline-input::-webkit-outer-spin-button,
+.ex-dur-inline-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+@keyframes durInputPop {
+  from { transform: scale(0.7); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
 }
 
 /* ===== TIMER SETTINGS ===== */

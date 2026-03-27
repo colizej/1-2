@@ -916,6 +916,70 @@ function updateStepperDisplay() {
   document.getElementById('val-prepTime').textContent = formSettings.prepTime;
 }
 
+/* ===== DOUBLETAP-TO-EDIT для цифр времени ===== */
+function setupLongpressEdit(valSpan, getVal, setVal, min, max) {
+  const container = valSpan.parentNode; // .exercise-dur
+
+  const inp = document.createElement('input');
+  inp.type = 'tel';
+  inp.inputMode = 'numeric';
+  inp.pattern = '[0-9]*';
+  inp.className = 'ex-dur-inline-input';
+  inp.setAttribute('aria-label', 'Время, секунды');
+  inp.style.display = 'none';
+  container.insertBefore(inp, valSpan.nextSibling);
+
+  let lastTap = 0;
+
+  function openEdit() {
+    inp.value = getVal();
+    valSpan.style.visibility = 'hidden';
+    inp.style.display = 'block';
+    inp.focus();   // синхронно внутри touchend/dblclick — iOS Safari разрешает
+    inp.select();
+    vibrate([15]);
+  }
+
+  function commitEdit() {
+    const raw = parseInt(inp.value, 10);
+    const valid = !isNaN(raw) ? Math.min(max, Math.max(min, raw)) : getVal();
+    setVal(valid);
+    valSpan.textContent = valid;
+    inp.style.display = 'none';
+    valSpan.style.visibility = '';
+    vibrate([10]);
+  }
+
+  inp.addEventListener('blur', commitEdit);
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+  });
+  inp.addEventListener('touchstart', e => e.stopPropagation());
+  inp.addEventListener('pointerdown', e => e.stopPropagation());
+
+  // Touch: двойной тап — детектируем в touchstart, фокусируем тут же.
+  // iOS Safari разрешает focus() ТОЛЬКО в touchstart/touchend внутри user-gesture,
+  // причём touchstart надёжнее при наличии overflow-scroll родителя.
+  valSpan.addEventListener('touchstart', e => {
+    const now = Date.now();
+    if (now - lastTap < 400) {
+      // Второй тап — открываем
+      e.preventDefault();   // не допускаем scroll и zoom
+      e.stopPropagation();
+      lastTap = 0;
+      openEdit();
+    } else {
+      lastTap = now;
+    }
+  }, { passive: false });
+
+  // Desktop: нативный dblclick
+  valSpan.addEventListener('dblclick', e => {
+    e.preventDefault();
+    openEdit();
+  });
+}
+
 function addExercise(name = '', duration = null, rest = null, silent = false) {
   const lastEx = formExercises.length > 0 ? formExercises[formExercises.length - 1] : null;
   const dur = (duration !== null && duration > 0) ? duration : (lastEx ? lastEx.duration : formSettings.work);
@@ -945,7 +1009,7 @@ function addExercise(name = '', duration = null, rest = null, silent = false) {
         <span class="ex-dur-label">Работа</span>
         <div class="exercise-dur">
           <button class="ex-dur-btn ex-dur-minus">−</button>
-          <span class="ex-dur-val">${dur}</span>
+          <input type="tel" inputmode="numeric" pattern="[0-9]*" class="ex-dur-val" value="${dur}" />
           <button class="ex-dur-btn ex-dur-plus">+</button>
         </div>
       </div>
@@ -953,7 +1017,7 @@ function addExercise(name = '', duration = null, rest = null, silent = false) {
         <span class="ex-dur-label">Отдых</span>
         <div class="exercise-dur">
           <button class="ex-dur-btn ex-rest-minus">−</button>
-          <span class="ex-rest-val">${rst}</span>
+          <input type="tel" inputmode="numeric" pattern="[0-9]*" class="ex-rest-val" value="${rst}" />
           <button class="ex-dur-btn ex-rest-plus">+</button>
         </div>
       </div>
@@ -965,41 +1029,45 @@ function addExercise(name = '', duration = null, rest = null, silent = false) {
     if (found) found.name = e.target.value;
   });
 
+  const durInp  = item.querySelector('.ex-dur-val');
+  const restInp = item.querySelector('.ex-rest-val');
+
+  // +/− обновляют модель и поле
   item.querySelector('.ex-dur-minus').addEventListener('click', () => {
     const found = formExercises.find(x => x.id === ex.id);
-    if (found) {
-      found.duration = Math.max(5, found.duration - 5);
-      item.querySelector('.ex-dur-val').textContent = found.duration;
-      vibrate([10]);
-    }
+    if (found) { found.duration = Math.max(5, found.duration - 5); durInp.value = found.duration; vibrate([10]); }
   });
-
   item.querySelector('.ex-dur-plus').addEventListener('click', () => {
     const found = formExercises.find(x => x.id === ex.id);
-    if (found) {
-      found.duration = Math.min(300, found.duration + 5);
-      item.querySelector('.ex-dur-val').textContent = found.duration;
-      vibrate([10]);
-    }
+    if (found) { found.duration = Math.min(300, found.duration + 5); durInp.value = found.duration; vibrate([10]); }
   });
-
   item.querySelector('.ex-rest-minus').addEventListener('click', () => {
     const found = formExercises.find(x => x.id === ex.id);
-    if (found) {
-      found.rest = Math.max(0, found.rest - 5);
-      item.querySelector('.ex-rest-val').textContent = found.rest;
-      vibrate([10]);
-    }
+    if (found) { found.rest = Math.max(0, found.rest - 5); restInp.value = found.rest; vibrate([10]); }
   });
-
   item.querySelector('.ex-rest-plus').addEventListener('click', () => {
     const found = formExercises.find(x => x.id === ex.id);
-    if (found) {
-      found.rest = Math.min(120, found.rest + 5);
-      item.querySelector('.ex-rest-val').textContent = found.rest;
-      vibrate([10]);
-    }
+    if (found) { found.rest = Math.min(120, found.rest + 5); restInp.value = found.rest; vibrate([10]); }
   });
+
+  // Ручной ввод: blur валидирует и сохраняет в модель
+  durInp.addEventListener('blur', () => {
+    const found = formExercises.find(x => x.id === ex.id);
+    if (!found) return;
+    const raw = parseInt(durInp.value, 10);
+    found.duration = isNaN(raw) ? found.duration : Math.min(300, Math.max(5, raw));
+    durInp.value = found.duration;
+  });
+  durInp.addEventListener('focus', () => durInp.select());
+
+  restInp.addEventListener('blur', () => {
+    const found = formExercises.find(x => x.id === ex.id);
+    if (!found) return;
+    const raw = parseInt(restInp.value, 10);
+    found.rest = isNaN(raw) ? found.rest : Math.min(120, Math.max(0, raw));
+    restInp.value = found.rest;
+  });
+  restInp.addEventListener('focus', () => restInp.select());
 
   item.querySelector('.btn-del-exercise').addEventListener('click', () => {
     formExercises = formExercises.filter(x => x.id !== ex.id);
