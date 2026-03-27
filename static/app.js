@@ -848,7 +848,65 @@ function updateMusicDisabledUI() {
 function resetFormMusic() {
   ['work', 'rest', 'fin'].forEach(p => { formMusic[p] = { blob: null, action: null }; });
   formMusicMuted = { work: false, rest: false, fin: false };
+  stopMusicPreview();
 }
+
+/* ===== MUSIC PREVIEW ===== */
+let _previewAudio = null;
+let _previewPhase = null;
+let _previewObjUrl = null;
+
+function stopMusicPreview() {
+  if (_previewAudio) {
+    _previewAudio.pause();
+    _previewAudio.src = '';
+    _previewAudio = null;
+  }
+  if (_previewObjUrl) { URL.revokeObjectURL(_previewObjUrl); _previewObjUrl = null; }
+  if (_previewPhase) {
+    const btn = document.getElementById(`music-preview-btn-${_previewPhase}`);
+    if (btn) setPreviewBtnState(btn, false);
+    _previewPhase = null;
+  }
+}
+
+function setPreviewBtnState(btn, playing) {
+  btn.querySelector('.icon-play').style.display = playing ? 'none' : '';
+  btn.querySelector('.icon-stop').style.display = playing ? '' : 'none';
+  btn.classList.toggle('music-preview-playing', playing);
+}
+
+async function toggleMusicPreview(phase) {
+  const btn = document.getElementById(`music-preview-btn-${phase}`);
+  // Если уже играет эта же фаза — стоп
+  if (_previewPhase === phase) { stopMusicPreview(); return; }
+  // Стоп предыдущей
+  stopMusicPreview();
+
+  // Определяем blob: сначала из формы, потом из IDB
+  let blob = formMusic[phase]?.blob;
+  if (!blob && formMusic[phase]?.action !== 'remove') {
+    const editId = document.getElementById('screen-create').dataset.editId;
+    blob = await loadMusicBlob(editId || '_demo', phase);
+    if (!blob) blob = await loadMusicBlob('_demo', phase);
+  }
+  if (!blob) return;
+
+  _previewObjUrl = URL.createObjectURL(blob);
+  _previewAudio = new Audio(_previewObjUrl);
+  _previewAudio.volume = 0.7;
+  _previewPhase = phase;
+  setPreviewBtnState(btn, true);
+  _previewAudio.addEventListener('ended', stopMusicPreview);
+  _previewAudio.addEventListener('error', stopMusicPreview);
+  try { await _previewAudio.play(); } catch(e) { stopMusicPreview(); }
+  vibrate([10]);
+}
+
+// Подключаем кнопки
+['work', 'rest', 'fin'].forEach(phase => {
+  document.getElementById(`music-preview-btn-${phase}`).addEventListener('click', () => toggleMusicPreview(phase));
+});
 
 // Mute toggles per phase
 ['work', 'rest', 'fin'].forEach(phase => {
@@ -1819,6 +1877,7 @@ document.getElementById('btn-back-progress').addEventListener('click', () => {
 /* ===== WIRE UP BUTTONS ===== */
 document.getElementById('btn-open-create').addEventListener('click', openSettingsSheet);
 document.getElementById('btn-back-create').addEventListener('click', () => {
+  stopMusicPreview();
   const home = document.getElementById('screen-home');
   const create = document.getElementById('screen-create');
   create.classList.remove('active');
