@@ -1039,7 +1039,7 @@ function addExercise(name = '', duration = null, rest = null, silent = false) {
   });
   item.querySelector('.ex-dur-plus').addEventListener('click', () => {
     const found = formExercises.find(x => x.id === ex.id);
-    if (found) { found.duration = Math.min(300, found.duration + 5); durInp.value = found.duration; vibrate([10]); }
+    if (found) { found.duration = Math.min(1200, found.duration + 5); durInp.value = found.duration; vibrate([10]); }
   });
   item.querySelector('.ex-rest-minus').addEventListener('click', () => {
     const found = formExercises.find(x => x.id === ex.id);
@@ -1047,7 +1047,7 @@ function addExercise(name = '', duration = null, rest = null, silent = false) {
   });
   item.querySelector('.ex-rest-plus').addEventListener('click', () => {
     const found = formExercises.find(x => x.id === ex.id);
-    if (found) { found.rest = Math.min(120, found.rest + 5); restInp.value = found.rest; vibrate([10]); }
+    if (found) { found.rest = Math.min(300, found.rest + 5); restInp.value = found.rest; vibrate([10]); }
   });
 
   // Ручной ввод: blur валидирует и сохраняет в модель
@@ -1055,7 +1055,7 @@ function addExercise(name = '', duration = null, rest = null, silent = false) {
     const found = formExercises.find(x => x.id === ex.id);
     if (!found) return;
     const raw = parseInt(durInp.value, 10);
-    found.duration = isNaN(raw) ? found.duration : Math.min(300, Math.max(5, raw));
+    found.duration = isNaN(raw) ? found.duration : Math.min(1200, Math.max(5, raw));
     durInp.value = found.duration;
   });
   durInp.addEventListener('focus', () => durInp.select());
@@ -1064,7 +1064,7 @@ function addExercise(name = '', duration = null, rest = null, silent = false) {
     const found = formExercises.find(x => x.id === ex.id);
     if (!found) return;
     const raw = parseInt(restInp.value, 10);
-    found.rest = isNaN(raw) ? found.rest : Math.min(120, Math.max(0, raw));
+    found.rest = isNaN(raw) ? found.rest : Math.min(300, Math.max(0, raw));
     restInp.value = found.rest;
   });
   restInp.addEventListener('focus', () => restInp.select());
