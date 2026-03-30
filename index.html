@@ -26,12 +26,39 @@
   <meta name="twitter:title" content="ОДИН·ДВА — интервальный таймер" />
   <meta name="twitter:description" content="Один — работа, два — отдых. Конструктор HIIT, силовых и кардио тренировок с музыкой по фазам. Без рекламы." />
   <meta name="twitter:image" content="https://odin-dva.ru/icons/og-image.png" />
-  <title>Один-Два</title>
+  <title>ОДИН·ДВА — интервальный таймер для тренировок HIIT</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/svg+xml" href="icons/favicon.svg" />
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png" />
   <link rel="stylesheet" href="static/style.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "ОДИН·ДВА",
+    "alternateName": "Odin-Dva",
+    "description": "Персональный интервальный таймер для HIIT, силовых и кардио тренировок. Конструктор программ с музыкой по фазам. Работает офлайн, без рекламы и регистрации.",
+    "applicationCategory": "SportsApplication",
+    "applicationSubCategory": "Fitness",
+    "operatingSystem": "Web, iOS, Android",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "RUB"
+    },
+    "url": "https://odin-dva.ru",
+    "inLanguage": "ru",
+    "featureList": [
+      "Интервальный таймер HIIT",
+      "Конструктор тренировок",
+      "Музыка по фазам работы и отдыха",
+      "Офлайн-режим без интернета",
+      "История тренировок",
+      "Без регистрации и рекламы"
+    ]
+  }
+  </script>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-1D6J41RLMG"></script>
   <script>
@@ -96,9 +123,22 @@
       <button id="install-btn">Установить</button>
       <button id="install-dismiss" aria-label="Закрыть">✕</button>
     </div>
-    <footer class="home-tagline" aria-hidden="true">
-      <span>Персональный интервальный таймер для тренировок</span>
-      <span>HIIT&nbsp;·&nbsp;силовые&nbsp;·&nbsp;кардио&nbsp;—&nbsp;офлайн, без регистрации</span>
+    <footer class="home-tagline" id="home-tagline" role="button" aria-expanded="false" tabindex="0">
+      <div class="tagline-body">
+        <span class="tagline-logo-text"><span class="title-one">ОДИН</span><span class="title-dot">·</span><span class="title-two">ДВА</span></span>
+        <p>Бесплатный интервальный таймер для HIIT, силовых и кардио тренировок. Конструктор программ с музыкой по фазам. Офлайн, без рекламы и регистрации.</p>
+        <ul>
+          <li>Время работы и отдыха для каждого упражнения</li>
+          <li>Разная музыка на фазу работы, отдыха и финиш</li>
+          <li>Устанавливается на телефон как приложение (PWA)</li>
+          <li>История и статистика тренировок</li>
+        </ul>
+      </div>
+      <div class="tagline-peek">
+        <svg class="tagline-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="18 15 12 9 6 15"/></svg>
+        <span>Персональный интервальный таймер для тренировок</span>
+        <span>HIIT&nbsp;·&nbsp;силовые&nbsp;·&nbsp;кардио&nbsp;—&nbsp;офлайн, без регистрации</span>
+      </div>
     </footer>
   </div>
 
@@ -230,7 +270,7 @@
             <span class="music-phase-label">Работа</span>
             <div class="music-picker">
               <label class="music-pick-btn" for="music-file-input-work">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 Файл
               </label>
               <input type="file" id="music-file-input-work" accept="audio/*" style="display:none" />
@@ -253,7 +293,7 @@
             <span class="music-phase-label">Отдых</span>
             <div class="music-picker">
               <label class="music-pick-btn" for="music-file-input-rest">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 Файл
               </label>
               <input type="file" id="music-file-input-rest" accept="audio/*" style="display:none" />
@@ -276,7 +316,7 @@
             <span class="music-phase-label">Финиш</span>
             <div class="music-picker">
               <label class="music-pick-btn" for="music-file-input-fin">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 Файл
               </label>
               <input type="file" id="music-file-input-fin" accept="audio/*" style="display:none" />
@@ -451,6 +491,47 @@
 
 </div>
   <div id="toast" aria-live="polite"></div>
+
+  <noscript>
+    <p>ОДИН·ДВА — интервальный таймер для HIIT и силовых тренировок. Офлайн, без рекламы. Сайт: https://odin-dva.ru</p>
+  </noscript>
+
   <script src="static/app.js"></script>
+  <script>
+    (function () {
+      var footer = document.getElementById('home-tagline');
+      var closeTimer;
+
+      function openTagline() {
+        footer.classList.add('open');
+        footer.setAttribute('aria-expanded', 'true');
+        clearTimeout(closeTimer);
+        closeTimer = setTimeout(closeTagline, 9000);
+      }
+
+      function closeTagline() {
+        footer.classList.remove('open');
+        footer.setAttribute('aria-expanded', 'false');
+      }
+
+      footer.addEventListener('click', function () {
+        if (footer.classList.contains('open')) {
+          clearTimeout(closeTimer);
+          closeTagline();
+        } else {
+          openTagline();
+        }
+      });
+
+      footer.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); footer.click(); }
+      });
+
+      if (!localStorage.getItem('tagline-seen')) {
+        localStorage.setItem('tagline-seen', '1');
+        setTimeout(openTagline, 900);
+      }
+    })();
+  </script>
 </body>
 </html>

@@ -273,26 +273,72 @@ html, body {
 /* ===== HOME TAGLINE ===== */
 .home-tagline {
   flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* expandable body — hidden by default */
+.tagline-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.45s ease;
+  padding: 0 16px;
+  color: rgba(136, 136, 153, 0.5);
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: center;
+}
+.home-tagline.open .tagline-body {
+  max-height: 320px;
+}
+.tagline-logo-text {
+  display: block;
+  margin: 12px 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.tagline-body p {
+  margin: 0 0 8px;
+}
+.tagline-body ul {
+  display: inline-block;
+  margin: 0 0 12px;
+  padding-left: 14px;
+  text-align: left;
+}
+.tagline-body li { margin-bottom: 3px; }
+
+/* always-visible peek row */
+.tagline-peek {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 10px 16px calc(10px + var(--safe-bottom));
-  border-top: 1px solid var(--border);
+  gap: 2px;
+  padding: 8px 16px calc(10px + var(--safe-bottom));
   text-align: center;
 }
-.home-tagline span {
+.tagline-peek span {
   font-size: 10px;
   color: rgba(136, 136, 153, 0.45);
   letter-spacing: 0.04em;
   line-height: 1.4;
   user-select: none;
 }
-.home-tagline span:first-child {
+.tagline-peek span:first-of-type {
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-size: 9px;
+}
+.tagline-chevron {
+  color: rgba(136, 136, 153, 0.3);
+  transition: transform 0.35s ease;
+  margin-bottom: 2px;
+}
+.home-tagline.open .tagline-chevron {
+  transform: rotate(180deg);
 }
 
 .workout-card {

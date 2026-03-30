@@ -11,8 +11,12 @@ function releaseWakeLock() {
   if (_wakeLock) { _wakeLock.release(); _wakeLock = null; }
 }
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && timer && timer.phase && timer.phase !== 'idle' && timer.phase !== 'done') {
-    requestWakeLock();
+  if (document.visibilityState === 'visible') {
+    if (timer && timer.phase && timer.phase !== 'idle' && timer.phase !== 'done') {
+      requestWakeLock();
+    }
+  } else {
+    releaseWakeLock();
   }
 });
 
@@ -64,24 +68,27 @@ function playBeepBuffer(key) {
 let _ctxResumePromise = null;
 
 function unlockAudioSync() {
+  // Create AudioContext inside gesture handler — required on iOS Safari
   const ctx = getAudioCtx();
-  // Play silent buffer synchronously (iOS Safari requirement)
+  // Play silent buffer synchronously to unlock audio output on iOS
   const buf = ctx.createBuffer(1, 1, 22050);
   const src = ctx.createBufferSource();
   src.buffer = buf;
   src.connect(ctx.destination);
   src.start(0);
   _ctxResumePromise = ctx.resume();
+  // Start loading beep buffers now that context exists inside a gesture
+  loadBeepBuffers();
 }
 
 // Pre-unlock on first touch anywhere on page
-['touchend', 'click'].forEach(evt => {
-  document.addEventListener(evt, function preUnlock() {
-    unlockAudioSync();
-    document.removeEventListener('touchend', preUnlock);
-    document.removeEventListener('click', preUnlock);
-  }, { passive: true });
-});
+function _preUnlock() {
+  unlockAudioSync();
+  document.removeEventListener('touchend', _preUnlock);
+  document.removeEventListener('click', _preUnlock);
+}
+document.addEventListener('touchend', _preUnlock, { passive: true });
+document.addEventListener('click',    _preUnlock, { passive: true });
 
 function flashTick() {
   const el = document.getElementById('tick-flash');
@@ -135,13 +142,20 @@ function openMusicDB() {
 }
 
 async function saveMusicBlob(workoutId, phase, blob) {
-  const db = await openMusicDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(MUSIC_STORE, 'readwrite');
-    tx.objectStore(MUSIC_STORE).put(blob, `${workoutId}_${phase}`);
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
+  try {
+    const db = await openMusicDB();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(MUSIC_STORE, 'readwrite');
+      tx.objectStore(MUSIC_STORE).put(blob, `${workoutId}_${phase}`);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (e) {
+    if (e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+      showToast('Не хватает места для сохранения музыки');
+    }
+    throw e;
+  }
 }
 
 async function loadMusicBlob(workoutId, phase) {
@@ -670,6 +684,7 @@ let progressDetailWorkout = null; // workout name key for current detail
 
 function renderProgress() {
   const list = document.getElementById('workouts-list');
+  if (!list) return;
   const old = list.querySelector('.progress-section');
   if (old) old.remove();
 
@@ -746,9 +761,10 @@ function renderProgress() {
   list.appendChild(section);
 }
 
-function deleteHistoryItem(origIdx) {
+function deleteHistoryItem(id) {
   const history = JSON.parse(localStorage.getItem('odindva_history') || '[]');
-  history.splice(origIdx, 1);
+  const idx = history.findIndex(item => item.id === id);
+  if (idx !== -1) history.splice(idx, 1);
   localStorage.setItem('odindva_history', JSON.stringify(history));
 }
 
@@ -791,7 +807,7 @@ function openProgressDetail(group) {
     `;
     tr.querySelector('.pdet-del-btn').addEventListener('click', () => {
       showConfirm('Удалить запись?', () => {
-        deleteHistoryItem(session.origIdx);
+        deleteHistoryItem(session.id);
         tr.style.transition = 'opacity 0.2s';
         tr.style.opacity = '0';
         setTimeout(() => {
@@ -855,6 +871,7 @@ function resetFormMusic() {
 let _previewAudio = null;
 let _previewPhase = null;
 let _previewObjUrl = null;
+let _previewGeneration = 0;
 
 function stopMusicPreview() {
   if (_previewAudio) {
@@ -883,6 +900,8 @@ async function toggleMusicPreview(phase) {
   // Стоп предыдущей
   stopMusicPreview();
 
+  const generation = ++_previewGeneration;
+
   // Определяем blob: сначала из формы, потом из IDB
   let blob = formMusic[phase]?.blob;
   if (!blob && formMusic[phase]?.action !== 'remove') {
@@ -890,6 +909,8 @@ async function toggleMusicPreview(phase) {
     blob = await loadMusicBlob(editId || '_demo', phase);
     if (!blob) blob = await loadMusicBlob('_demo', phase);
   }
+  // Если пока грузили blob, пользователь нажал другую кнопку — выходим
+  if (generation !== _previewGeneration) return;
   if (!blob) return;
 
   _previewObjUrl = URL.createObjectURL(blob);
@@ -1294,7 +1315,7 @@ function saveWorkout() {
       // Persist music blob changes per phase
       ['work', 'rest', 'fin'].forEach(p => {
         const m = formMusic[p];
-        if (m.action === 'set' && m.blob) saveMusicBlob(editId, p, m.blob);
+        if (m.action === 'set' && m.blob) saveMusicBlob(editId, p, m.blob).catch(() => {});
         else if (m.action === 'remove')   deleteMusicBlob(editId, p);
       });
     }
@@ -1327,7 +1348,7 @@ function saveWorkout() {
   };
 
   ['work', 'rest', 'fin'].forEach(p => {
-    if (formMusic[p].blob) saveMusicBlob(workout.id, p, formMusic[p].blob);
+    if (formMusic[p].blob) saveMusicBlob(workout.id, p, formMusic[p].blob).catch(() => {});
   });
 
   state.workouts.unshift(workout);
@@ -1559,6 +1580,7 @@ function startRound(roundIdx) {
 
   const workout = timer.workout;
   const exCount = workout.exercises.length;
+  if (!exCount) { finishWorkout(); return; }
   const exIdx = roundIdx % exCount;
   timer.currentExIdx = exIdx;
 
@@ -1567,7 +1589,7 @@ function startRound(roundIdx) {
 
   updateDots(roundIdx);
   setCircleColor('work');
-  updateExerciseLabel(workout.exercises[exIdx].name, 'work');
+  updateExerciseLabel((workout.exercises[exIdx] || {}).name || '—', 'work');
   document.getElementById('circle-pulse').classList.add('beat');
 
   timer.phase = 'work';
@@ -1585,21 +1607,24 @@ function startRound(roundIdx) {
 
 function runTick() {
   clearInterval(timer.intervalId);
-  // Snap to display
+  const phaseStartTime = performance.now();
+  const phaseStartLeft = timer.timeLeft;
   renderTimer();
 
   timer.intervalId = setInterval(() => {
-    if (timer.paused) return;
-
-    timer.timeLeft--;
-    timer.totalElapsed++;
-    renderTimer();
-
+    const elapsed = Math.floor((performance.now() - phaseStartTime) / 1000);
+    const newLeft = Math.max(0, phaseStartLeft - elapsed);
+    const ticked = timer.timeLeft - newLeft;
+    if (ticked > 0) {
+      timer.totalElapsed += ticked;
+      timer.timeLeft = newLeft;
+      renderTimer();
+    }
     if (timer.timeLeft <= 0) {
       clearInterval(timer.intervalId);
       onPhaseEnd();
     }
-  }, 1000);
+  }, 250);
 }
 
 function renderTimer() {
@@ -1645,7 +1670,7 @@ function onPhaseEnd() {
       timer.phase = 'rest';
       timer.timeLeft = exRest;
       setCircleColor('rest');
-      updateExerciseLabel(workout.exercises[timer.currentExIdx].name, 'rest');
+      updateExerciseLabel((workout.exercises[timer.currentExIdx] || {}).name || '—', 'rest');
       timer.log.push({ round: timer.currentRound + 1, exercise: 'Отдых', phase: 'rest', duration: exRest });
       beepGo();
       playPhaseMusic(workout.id, 'rest');
@@ -1747,6 +1772,7 @@ function spawnConfetti() {
 document.getElementById('btn-stop-timer').addEventListener('click', () => {
   clearInterval(timer.intervalId);
   timer.phase = 'idle';
+  timer.log = [];
   releaseWakeLock();
   hideSkipBtn();
   stopPhaseMusic();
@@ -1832,7 +1858,10 @@ function importWorkouts(file) {
     try {
       const data = JSON.parse(e.target.result);
       if (!data.workouts || !Array.isArray(data.workouts)) throw new Error('bad format');
-      const incoming = data.workouts;
+      const incoming = data.workouts.filter(w =>
+        w && typeof w.id !== 'undefined' && typeof w.name === 'string' &&
+        Array.isArray(w.exercises)
+      );
       const existing = JSON.parse(localStorage.getItem('odindva_workouts') || '[]');
       // Merge: skip duplicates by id
       const existingIds = new Set(existing.map(w => String(w.id)));
@@ -1847,6 +1876,7 @@ function importWorkouts(file) {
       showConfirm('Ошибка: неверный формат файла', () => {});
     }
   };
+  reader.onerror = () => { showConfirm('Ошибка чтения файла', () => {}); };
   reader.readAsText(file);
 }
 
@@ -1978,7 +2008,8 @@ document.getElementById('install-dismiss').addEventListener('click', () => {
 /* ===== INIT ===== */
 function init() {
   installDemoMusicIfNeeded();
-  loadBeepBuffers();
+  // loadBeepBuffers() вызывается в unlockAudioSync() — при первом жесте пользователя.
+  // Это гарантирует создание AudioContext внутри gesture handler на iOS Safari.
   loadWorkouts();
   cleanOrphanedMusicBlobs();
   initExerciseDragDrop();
