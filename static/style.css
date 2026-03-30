@@ -316,8 +316,14 @@ html, body {
   flex-direction: column;
   align-items: center;
   gap: 1px;
-  padding: 5px 16px calc(6px + var(--safe-bottom));
+  padding: 5px 16px 6px;
   text-align: center;
+}
+/* safe area spacer — extends background under home indicator without inflating visible height */
+.tagline-peek::after {
+  content: '';
+  display: block;
+  height: env(safe-area-inset-bottom, 0px);
 }
 .tagline-peek span {
   font-size: 10px;
