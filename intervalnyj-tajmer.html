@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="index, follow" />
+  <title>Интервальный таймер онлайн — бесплатно, без регистрации | ОДИН·ДВА</title>
+  <meta name="description" content="Бесплатный интервальный таймер онлайн для тренировок: высокоинтенсивные интервальные, табата, круговые, силовые и кардио. Без рекламы, работает офлайн." />
+  <meta name="keywords" content="интервальный таймер онлайн, таймер для тренировок, интервальный таймер бесплатно, табата таймер, таймер для интервальных тренировок, круговая тренировка таймер, высокоинтенсивные интервальные тренировки" />
+  <link rel="canonical" href="https://odin-dva.ru/intervalnyj-tajmer.html" />
+  <link rel="alternate" hreflang="ru" href="https://odin-dva.ru/intervalnyj-tajmer.html" />
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Что такое интервальные тренировки?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Интервальная тренировка — это чередование периодов интенсивной нагрузки и активного отдыха. Например: 40 секунд работы, 20 секунд отдыха. Такой формат эффективнее сжигает калории и развивает выносливость, чем монотонное кардио."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Что такое табата?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Табата — классический протокол интервальных тренировок: 20 секунд максимальной нагрузки, 10 секунд отдыха, 8 раундов (4 минуты). Разработан японским учёным Идзуми Табатой. Очень эффективен для сжигания жира и развития анаэробной выносливости."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Можно ли использовать таймер без интернета?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Да. ОДИН·ДВА — прогрессивное веб-приложение (PWA). После первого открытия оно сохраняется на устройстве и работает полностью офлайн. Тренируйтесь в зале, парке или дома без подключения к интернету."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Как сохранить программу тренировки?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Создайте тренировку в конструкторе: задайте название, число раундов, время работы и отдыха. Тренировка автоматически сохраняется на вашем устройстве. Данные хранятся локально и не передаются на серверы."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Можно ли добавить свою музыку?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Да. В редакторе тренировки можно загрузить разную музыку для фазы работы и фазы отдыха. Файлы хранятся локально на устройстве."
+        }
+      }
+    ]
+  }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --border: #ffffff12;
+      --accent: #7c6fff;
+      --accent2: #ff6f84;
+      --text: #f0f0f8;
+      --text-muted: #888899;
+    }
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+    .page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 48px;
+    }
+    .nav a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav a:hover { opacity: 0.8; }
+    .brand { font-size: 15px; font-weight: 700; letter-spacing: 0.06em; }
+    .brand .one { color: var(--text); }
+    .brand .dot { color: var(--accent); font-weight: 300; }
+    .brand .two {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    .lead {
+      font-size: 16px;
+      color: rgba(240,240,248,0.75);
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, var(--accent), #5a4fe0);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 14px 28px;
+      border-radius: 14px;
+      margin-bottom: 56px;
+      transition: opacity 0.15s;
+    }
+    .cta:hover { opacity: 0.88; }
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin: 48px 0 16px;
+      letter-spacing: -0.01em;
+    }
+    h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 24px 0 8px;
+    }
+    p { margin-bottom: 14px; color: rgba(240,240,248,0.82); }
+    ul, ol { padding-left: 22px; margin-bottom: 14px; color: rgba(240,240,248,0.82); }
+    li { margin-bottom: 7px; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+      margin: 20px 0 32px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+    }
+    .card-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .card-time {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .steps { counter-reset: step; list-style: none; padding: 0; }
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      color: rgba(240,240,248,0.82);
+    }
+    .steps li::before {
+      content: counter(step);
+      min-width: 28px;
+      height: 28px;
+      background: rgba(124,111,255,0.15);
+      border: 1px solid rgba(124,111,255,0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .faq-item {
+      border-bottom: 1px solid var(--border);
+      padding: 20px 0;
+    }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q {
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .faq-a { color: rgba(240,240,248,0.8); font-size: 14px; margin: 0; }
+    .highlight {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin: 20px 0;
+    }
+    footer {
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    footer a { color: var(--text-muted); }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <nav class="nav">
+      <a href="/">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+        Открыть таймер
+      </a>
+      <span style="color:var(--border)">|</span>
+      <span class="brand"><span class="one">ОДИН</span><span class="dot">·</span><span class="two">ДВА</span></span>
+    </nav>
+
+    <h1>Интервальный таймер онлайн — бесплатно, без регистрации</h1>
+    <p class="lead">Конструктор тренировок с таймером для любого формата: высокоинтенсивные интервальные, табата, круговые, силовые и кардио. Работает в браузере и офлайн.</p>
+
+    <a class="cta" href="/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Запустить таймер
+    </a>
+
+    <h2>Форматы тренировок</h2>
+    <p>Настройте любой интервальный протокол: задайте время работы, время отдыха и число раундов.</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-time">20 / 10</div>
+        <div class="card-title">Табата</div>
+        <div class="card-desc">20 сек работа, 10 сек отдых, 8 раундов — классический протокол сжигания жира</div>
+      </div>
+      <div class="card">
+        <div class="card-time">40 / 20</div>
+        <div class="card-title">Интервальная</div>
+        <div class="card-desc">Популярный формат: 40 секунд нагрузки, 20 отдыха. Подходит для любого уровня</div>
+      </div>
+      <div class="card">
+        <div class="card-time">45 / 15</div>
+        <div class="card-title">Силовая</div>
+        <div class="card-desc">Длинный рабочий интервал для силовых упражнений с весом</div>
+      </div>
+      <div class="card">
+        <div class="card-time">30 / 30</div>
+        <div class="card-title">Кардио</div>
+        <div class="card-desc">Равные интервалы работы и отдыха — стандарт для кардио тренировок</div>
+      </div>
+      <div class="card">
+        <div class="card-time">60 / 30</div>
+        <div class="card-title">Круговая</div>
+        <div class="card-desc">Длинные рабочие интервалы с коротким отдыхом между упражнениями</div>
+      </div>
+      <div class="card">
+        <div class="card-time">любой</div>
+        <div class="card-title">Свой формат</div>
+        <div class="card-desc">Настройте любое время работы и отдыха под вашу программу</div>
+      </div>
+    </div>
+
+    <h2>Как пользоваться таймером</h2>
+    <ol class="steps">
+      <li>Откройте приложение — нажмите «Запустить таймер» выше</li>
+      <li>Создайте тренировку: задайте время работы, отдыха и число раундов</li>
+      <li>При желании добавьте разную музыку для фазы работы и отдыха</li>
+      <li>Нажмите «Старт» — таймер покажет текущую фазу и отсчитает время</li>
+      <li>Тренировка автоматически сохранится для следующего раза</li>
+    </ol>
+
+    <h2>Возможности таймера</h2>
+    <ul>
+      <li><strong>Конструктор программ</strong> — несколько упражнений в одной тренировке с разным временем</li>
+      <li><strong>Музыка по фазам</strong> — своя треки для работы и отдыха</li>
+      <li><strong>История тренировок</strong> — записи всех пройденных сессий</li>
+      <li><strong>Офлайн-режим</strong> — работает без интернета после первого открытия</li>
+      <li><strong>Установка на телефон</strong> — добавьте как приложение без магазина</li>
+      <li><strong>Без рекламы и регистрации</strong> — просто открываете и тренируетесь</li>
+    </ul>
+
+    <h2>Что такое высокоинтенсивные интервальные тренировки</h2>
+    <p>Высокоинтенсивная интервальная тренировка — метод, при котором короткие периоды максимальной нагрузки чередуются с периодами отдыха или низкой интенсивности. Доказано, что такой формат:</p>
+    <ul>
+      <li>Сжигает больше калорий за то же время, чем монотонное кардио</li>
+      <li>Ускоряет метаболизм на несколько часов после тренировки</li>
+      <li>Развивает сердечно-сосудистую выносливость</li>
+      <li>Подходит для тренировок дома без оборудования</li>
+    </ul>
+
+    <div class="highlight">
+      <strong>Перед началом</strong><br>
+      Высокоинтенсивные тренировки создают серьёзную нагрузку на сердце. Если у вас есть хронические заболевания или вы давно не занимались — проконсультируйтесь с врачом.
+    </div>
+
+    <h2>Что такое табата</h2>
+    <p>Табата — разновидность интервальной тренировки с фиксированным протоколом: <strong>20 секунд максимальной нагрузки, 10 секунд отдыха, 8 раундов</strong> (итого 4 минуты на одно упражнение). Разработан в 1996 году японским учёным Идзуми Табатой.</p>
+    <p>Несмотря на короткую продолжительность, табата очень эффективна для сжигания жира и развития анаэробной выносливости. В ОДИН·ДВА можно настроить точно такой протокол за несколько секунд.</p>
+
+    <h2>Частые вопросы</h2>
+
+    <div class="faq-item">
+      <p class="faq-q">Нужно ли скачивать приложение?</p>
+      <p class="faq-a">Нет. Таймер работает прямо в браузере — откройте сайт и начните тренировку. При желании можно установить на телефон как PWA (без магазина приложений): нажмите «Добавить на экран» в браузере.</p>
+    </div>
+
+    <div class="faq-item">
+      <p class="faq-q">Работает ли таймер без интернета?</p>
+      <p class="faq-a">Да. После первого посещения приложение сохраняется на устройстве и работает полностью офлайн. Удобно в зале, парке или там, где нет связи.</p>
+    </div>
+
+    <div class="faq-item">
+      <p class="faq-q">Где хранятся мои тренировки?</p>
+      <p class="faq-a">Все тренировки и история хранятся локально на вашем устройстве. Ничего не отправляется на серверы. Данные не требуют регистрации и защищены настройками вашего браузера.</p>
+    </div>
+
+    <div class="faq-item">
+      <p class="faq-q">Можно ли добавить свою музыку?</p>
+      <p class="faq-a">Да. В редакторе тренировки загрузите разные треки для фазы работы и фазы отдыха. Аудиофайлы хранятся локально на устройстве.</p>
+    </div>
+
+    <div class="faq-item">
+      <p class="faq-q">Таймер бесплатный?</p>
+      <p class="faq-a">Да, полностью бесплатно. Без рекламы, без подписки, без регистрации. Просто открываете и тренируетесь.</p>
+    </div>
+
+    <div class="faq-item">
+      <p class="faq-q">Подходит ли для табаты?</p>
+      <p class="faq-a">Да. Создайте тренировку с параметрами: 20 сек работа, 10 сек отдых, 8 раундов — и таймер точно отсчитает классический протокол табаты.</p>
+    </div>
+
+    <footer>
+      <span>© 2026 ОДИН·ДВА</span>
+      <span>
+        <a href="/">Таймер</a> ·
+        <a href="/privacy.html">Конфиденциальность</a> ·
+        <a href="/terms.html">Соглашение</a>
+      </span>
+    </footer>
+
+  </div>
+</body>
+</html>
