@@ -337,6 +337,16 @@ html, body {
   transition: transform 0.35s ease;
   margin-bottom: 0;
 }
+.tagline-legal {
+  font-size: 9px !important;
+  color: rgba(136, 136, 153, 0.3) !important;
+  margin-top: 2px;
+}
+.tagline-legal a {
+  color: rgba(136, 136, 153, 0.35);
+  text-decoration: none;
+}
+.tagline-legal a:hover { color: rgba(136, 136, 153, 0.7); }
 .home-tagline.open .tagline-chevron {
   transform: rotate(180deg);
 }
