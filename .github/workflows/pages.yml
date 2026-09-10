@@ -58,3 +58,19 @@ jobs:
 
       - id: deployment
         uses: actions/deploy-pages@v4
+
+      # IndexNow: сказать Bing и Яндексу, что страницы изменились, не дожидаясь
+      # планового обхода. Ключ лежит в корне сайта отдельным файлом — так протокол
+      # проверяет, что домен наш. Список берём из sitemap.xml, чтобы он не разъезжался
+      # с картой сайта. На Google это не влияет: он IndexNow не поддерживает.
+      - name: Сообщить IndexNow об изменениях
+        continue-on-error: true
+        run: |
+          KEY=2971d4bc82bdf934ea2efdce2135f3d4
+          URLS=$(grep -oE '<loc>[^<]+</loc>' sitemap.xml | sed 's/<[^>]*>//g' \
+                 | sed 's/.*/"&"/' | paste -sd, -)
+          echo "Отправляю: $URLS"
+          curl -sS -X POST https://api.indexnow.org/indexnow \
+            -H 'Content-Type: application/json; charset=utf-8' \
+            -w '\nHTTP %{http_code}\n' \
+            -d "{\"host\":\"odin-dva.ru\",\"key\":\"$KEY\",\"keyLocation\":\"https://odin-dva.ru/$KEY.txt\",\"urlList\":[$URLS]}"
