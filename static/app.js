@@ -1,3 +1,16 @@
+/* ===== ANALYTICS =====
+   Счётчики подключены в index.html: Метрика 108311751 и GA4 G-1D6J41RLMG.
+   Обёртка одна на оба — цели заводятся в Метрике как «JavaScript-событие»
+   с идентификатором, равным первому аргументу. Если счётчик не загрузился
+   (блокировщик, офлайн, первый заход до готовности скрипта), вызов молча
+   пропускается: аналитика не имеет права ронять таймер. */
+const YM_COUNTER_ID = 108311751;
+
+function track(goal, params) {
+  try { if (typeof ym === 'function') ym(YM_COUNTER_ID, 'reachGoal', goal, params); } catch {}
+  try { if (typeof gtag === 'function') gtag('event', goal, params); } catch {}
+}
+
 /* ===== AUDIO ENGINE ===== */
 let audioCtx = null;
 
@@ -1328,6 +1341,8 @@ function saveWorkout() {
     return;
   }
 
+  track('workout_create', { exercises: exercises.length });
+
   const workout = {
     id: Date.now(),
     name,
@@ -1384,6 +1399,7 @@ const CIRCUMFERENCE = 2 * Math.PI * 120; // 753.98
 
 function startWorkout(workout) {
   requestWakeLock();
+  track('timer_start', { exercises: (workout.exercises || []).length });
   timer.workout = workout;
   timer.currentRound = 0;
   timer.currentExIdx = 0;
@@ -1697,6 +1713,7 @@ function afterRest() {
 
 function finishWorkout() {
   clearInterval(timer.intervalId);
+  track('workout_complete', { duration_sec: Math.round(timer.totalElapsed) });
   timer.phase = 'done';
   releaseWakeLock();
   hideSkipBtn();
@@ -1981,6 +1998,7 @@ async function cleanOrphanedMusicBlobs() {
 
 /* ===== INSTALL BANNER ===== */
 let _installPrompt = null;
+let _installSource = 'browser';
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
@@ -1993,12 +2011,18 @@ window.addEventListener('beforeinstallprompt', (e) => {
 document.getElementById('install-btn').addEventListener('click', () => {
   if (!_installPrompt) return;
   _installPrompt.prompt();
-  _installPrompt.userChoice.then(() => {
+  _installPrompt.userChoice.then((choice) => {
+    // Саму установку считаем один раз, в appinstalled — он срабатывает и после
+    // баннера, и после меню браузера. Здесь только запоминаем, откуда пришли:
+    // согласие в промпте ещё не означает, что установка дошла до конца.
+    if (choice && choice.outcome === 'accepted') _installSource = 'banner';
     _installPrompt = null;
     document.getElementById('install-banner').style.display = 'none';
     localStorage.setItem('odindva_install_dismissed', '1');
   });
 });
+
+window.addEventListener('appinstalled', () => track('pwa_install', { source: _installSource }));
 
 document.getElementById('install-dismiss').addEventListener('click', () => {
   document.getElementById('install-banner').style.display = 'none';
