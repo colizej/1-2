@@ -147,6 +147,7 @@ scripts/seo/weekly.sh        # всё разом: выгрузка + разбо�
 - [docs/analytics/README.md](docs/analytics/README.md) — доступы, ключи, Bing, IndexNow, замеры
 - [docs/analytics/metrika-goals.md](docs/analytics/metrika-goals.md) — как завести цели в Метрике
 - [docs/analytics/issues.md](docs/analytics/issues.md) — доступность, индексация, разбор Ahrefs
+- [docs/analytics/SETUP-PROMPT.md](docs/analytics/SETUP-PROMPT.md) — промт, чтобы поднять то же самое в другом проекте
 
 ## Деплой
 
