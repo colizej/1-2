@@ -1,3 +1,14 @@
 # macOS
 .DS_Store
 **/.DS_Store
+
+# === Ключи API и сервис-аккаунтов (см. secrets/README.md) ===
+secrets/*
+!secrets/README.md
+
+# === Выгрузки аналитики: сырые CSV не коммитим, TREND.md — да ===
+docs/analytics/data/**/*.csv
+
+# === Python ===
+__pycache__/
+*.pyc

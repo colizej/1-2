@@ -26,7 +26,7 @@
 | Хранилище тренировок | `localStorage` |
 | Хранилище музыки | `IndexedDB` (база `odindva_music`) |
 | Звук | `Web Audio API` (AudioContext + AudioBuffer, gapless loop) |
-| Офлайн | `Service Worker` (cache-first, v22) |
+| Офлайн | `Service Worker` (cache-first, версия в `CACHE_NAME`) |
 | Манифест | `manifest.json` (fullscreen, portrait) |
 
 ## Структура проекта
@@ -49,7 +49,11 @@
 │   ├── icon-192.png    # PWA icon (генерируется)
 │   └── icon-512.png    # PWA icon maskable (генерируется)
 ├── scripts/
-│   └── gen-og.js       # SVG → PNG: все иконки + og-image
+│   ├── gen-og.js       # SVG → PNG: все иконки + og-image
+│   └── seo/            # Выгрузка GSC / GA4 / Метрики / Bing
+├── docs/
+│   └── analytics/      # Инструкции, выгрузки, TREND.md, отчёты
+├── secrets/            # Ключи API (в .gitignore, кроме README)
 └── sounds/
     ├── beep_tick.m4a   # Бип отсчёта подготовки
     ├── beep_go.m4a     # Бип старта фазы
@@ -114,7 +118,28 @@ make og  # → icons/og-image.png, icon-512.png, icon-192.png, icon-180.png, fav
 | Файл | Назначение |
 |------|-----------|
 | `robots.txt` | Разрешает индексацию `index.html`; запрещает `sw.js`, `static/`, `sounds/`, `manifest.json` |
-| `sitemap.xml` | Одна запись `https://odin-dva.ru/`, `priority 1.0` |
+| `sitemap.xml` | Четыре записи: `/`, `/intervalnyj-tajmer.html`, `/privacy.html`, `/terms.html` |
 | `<meta name="description">` | Ключевая фраза для поисковиков, включает HIIT, силовые, кардио, офлайн |
 | `<title>` | `Один-Два` — запоминающееся название |
 | `.gitignore` | Личные `mp3`, `.DS_Store` — не попадают в репо и не индексируются |
+
+## Аналитика
+
+Подключены Google Analytics 4 (property `529871644`, поток `G-1D6J41RLMG`),
+Яндекс.Метрика (счётчик `108311751`) и Google Search Console. Счётчики стоят в
+`index.html`, выгрузка метрик через API — скриптами в `scripts/seo/`:
+
+```bash
+pip3 install -r requirements-seo.txt
+
+scripts/seo/weekly.sh        # всё разом: выгрузка + разбор
+```
+
+Свои заходы (Бельгия) режутся на уровне API — список в `scripts/seo/config.py`,
+посмотреть сырые данные можно флагом `--include-self`.
+
+Действия в приложении шлются в оба счётчика функцией `track()` из `static/app.js`:
+`timer_start`, `workout_complete`, `workout_create`, `pwa_install`.
+
+- [docs/analytics/README.md](docs/analytics/README.md) — доступы, ключи, цели, Bing, замеры
+- [docs/analytics/issues.md](docs/analytics/issues.md) — проблемы доступности и индексации

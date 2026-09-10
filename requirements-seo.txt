@@ -1,0 +1,7 @@
+# Аналитические скрипты (scripts/seo/fetch_gsc.py, fetch_ga4.py, fetch_metrika.py).
+# Для работы сайта не нужны — сайт статический, это инструменты разработчика:
+#   pip3 install -r requirements-seo.txt
+
+google-api-python-client>=2.150.0
+google-auth>=2.35.0
+google-analytics-data>=0.18.0
