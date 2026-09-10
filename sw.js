@@ -1,4 +1,4 @@
-const CACHE_NAME = 'odindva-v48';
+const CACHE_NAME = 'odindva-v49';
 const ASSETS = [
   './',
   './index.html',
@@ -9,9 +9,11 @@ const ASSETS = [
   './sounds/beep_go.m4a',
   './sounds/beep_warn.m4a',
   './sounds/beep_end.m4a',
-  './sounds/demo_work.m4a',
-  './sounds/demo_relaxe.m4a',
-  './sounds/demo_fin.m4a',
+  // Демо-музыка (11 МБ на три трека) здесь намеренно НЕ перечислена. Раньше была —
+  // и качалась при установке SW, то есть на первом же заходе, до того как человек
+  // что-либо сделал. На мобильной сети это 11 МБ в фоне ради музыки, которую могут
+  // никогда не включить. Теперь её тянет app.js по первому жесту, а сюда она
+  // попадает обычным путём — через runtime-кэш в fetch-обработчике ниже.
 ];
 
 self.addEventListener('install', (e) => {

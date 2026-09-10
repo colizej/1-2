@@ -97,6 +97,7 @@ function unlockAudioSync() {
 // Pre-unlock on first touch anywhere on page
 function _preUnlock() {
   unlockAudioSync();
+  ensureDemoMusic();          // не ждём: пусть качается фоном, пока человек листает
   document.removeEventListener('touchend', _preUnlock);
   document.removeEventListener('click', _preUnlock);
 }
@@ -117,6 +118,21 @@ function beepWarn()  { playBeepBuffer('warn'); }
 function beepEnd()   { playBeepBuffer('end'); }
 
 /* ===== DEMO MUSIC INSTALL ===== */
+// Демо-музыка весит 11 МБ и нужна далеко не всем. Грузим её лениво — по первому
+// жесту пользователя, а не при старте: на первом заходе она конкурировала с
+// отрисовкой и жгла мобильный трафик до того, как человек что-либо нажал.
+// 'ready' — уже в IndexedDB, 'pending' — качается или ещё не начинали,
+// 'failed' — не смогли (офлайн, ошибка сети).
+let _demoMusicState = localStorage.getItem('odindva_demo_v5') ? 'ready' : 'pending';
+let _demoMusicPromise = null;
+
+/** Дождаться демо-музыки. Повторные вызовы переиспользуют одну загрузку. */
+function ensureDemoMusic() {
+  if (_demoMusicState === 'ready' || _demoMusicState === 'failed') return Promise.resolve();
+  if (!_demoMusicPromise) _demoMusicPromise = installDemoMusicIfNeeded();
+  return _demoMusicPromise;
+}
+
 async function installDemoMusicIfNeeded() {
   if (localStorage.getItem('odindva_demo_v5')) return;
   const map = {
@@ -136,8 +152,11 @@ async function installDemoMusicIfNeeded() {
     localStorage.removeItem('odindva_demo_v3');
     localStorage.removeItem('odindva_demo_v4');
     localStorage.setItem('odindva_demo_v5', '1');
+    _demoMusicState = 'ready';
   } catch (e) {
     console.warn('Demo music install failed:', e);
+    _demoMusicState = 'failed';
+    _demoMusicPromise = null;   // дать шанс повторить, когда сеть вернётся
   }
 }
 
@@ -227,7 +246,10 @@ async function _loadMusicBuffer(workoutId, phase) {
   const key = `${workoutId}_${phase}`;
   if (_musicBufferCache.has(key)) return { buffer: _musicBufferCache.get(key), key };
   let blob = await loadMusicBlob(workoutId, phase);
-  if (!blob) blob = await loadMusicBlob('_demo', phase);
+  if (!blob) {
+    await ensureDemoMusic();  // могли дойти сюда раньше, чем докачалось
+    blob = await loadMusicBlob('_demo', phase);
+  }
   if (!blob) return null;
   const ctx = getAudioCtx();
   const arrayBuf = await blob.arrayBuffer();
@@ -920,7 +942,10 @@ async function toggleMusicPreview(phase) {
   if (!blob && formMusic[phase]?.action !== 'remove') {
     const editId = document.getElementById('screen-create').dataset.editId;
     blob = await loadMusicBlob(editId || '_demo', phase);
-    if (!blob) blob = await loadMusicBlob('_demo', phase);
+    if (!blob) {
+      await ensureDemoMusic();
+      blob = await loadMusicBlob('_demo', phase);
+    }
   }
   // Если пока грузили blob, пользователь нажал другую кнопку — выходим
   if (generation !== _previewGeneration) return;
@@ -960,7 +985,8 @@ function setFormMusicUI(phase, name) {
     info.style.display = 'flex';
     info.classList.remove('music-demo-active');
     if (removeBtn) removeBtn.style.display = '';
-  } else if (localStorage.getItem('odindva_demo_v5')) {
+  } else if (_demoMusicState !== 'failed') {
+    // Пока качается — всё равно пишем «Демо»: она есть в комплекте, вопрос секунд.
     nameEl.textContent = 'Демо';
     info.style.display = 'flex';
     info.classList.add('music-demo-active');
@@ -2031,7 +2057,8 @@ document.getElementById('install-dismiss').addEventListener('click', () => {
 
 /* ===== INIT ===== */
 function init() {
-  installDemoMusicIfNeeded();
+  // installDemoMusicIfNeeded() отсюда убран: он тянул 11 МБ на первом заходе.
+  // Теперь запускается по первому жесту, см. _preUnlock().
   // loadBeepBuffers() вызывается в unlockAudioSync() — при первом жесте пользователя.
   // Это гарантирует создание AudioContext внутри gesture handler на iOS Safari.
   loadWorkouts();
