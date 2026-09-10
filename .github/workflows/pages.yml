@@ -1,0 +1,60 @@
+# Деплой статического сайта на GitHub Pages.
+#
+# Заменил встроенный («легаси») конвейер: 10.09.2026 тот перестал запускаться на
+# новые коммиты и молчал об этом — сборка числилась успешной, а на сайте висела
+# версия трёхмесячной давности. Здесь каждый деплой видно во вкладке Actions.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Параллельные деплои не нужны, но и обрывать начатый не стоит — пусть докатится.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+
+      # Список исключений, а не включений: новая страница попадёт на сайт сама,
+      # без правки этого файла. Забыть добавить страницу проще, чем забыть
+      # исключить служебную папку.
+      - name: Собрать содержимое сайта
+        run: |
+          mkdir -p _site
+          rsync -a \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude 'docs/' \
+            --exclude 'scripts/' \
+            --exclude 'secrets/' \
+            --exclude '__pycache__/' \
+            --exclude '*.pyc' \
+            --exclude '*.md' \
+            --exclude 'Makefile' \
+            --exclude 'requirements-seo.txt' \
+            ./ _site/
+          echo "Опубликуется:"
+          find _site -maxdepth 1 -mindepth 1 | sort
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
