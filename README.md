@@ -54,6 +54,7 @@
 ├── docs/
 │   └── analytics/      # Инструкции, выгрузки, TREND.md, отчёты
 ├── secrets/            # Ключи API (в .gitignore, кроме README)
+├── .github/workflows/  # Деплой на GitHub Pages + уведомление IndexNow
 └── sounds/
     ├── beep_tick.m4a   # Бип отсчёта подготовки
     ├── beep_go.m4a     # Бип старта фазы
@@ -122,6 +123,8 @@ make og  # → icons/og-image.png, icon-512.png, icon-192.png, icon-180.png, fav
 | `<meta name="description">` | Ключевая фраза для поисковиков, включает HIIT, силовые, кардио, офлайн |
 | `<title>` | `Один-Два` — запоминающееся название |
 | `.gitignore` | Личные `mp3`, `.DS_Store` — не попадают в репо и не индексируются |
+| `<ключ>.txt` в корне | Подтверждение домена для IndexNow — трогать нельзя |
+| Подтверждения сайтов | `google-site-verification`, `yandex-verification`, `msvalidate.01` в `<head>` `index.html` |
 
 ## Аналитика
 
@@ -141,5 +144,15 @@ scripts/seo/weekly.sh        # всё разом: выгрузка + разбо�
 Действия в приложении шлются в оба счётчика функцией `track()` из `static/app.js`:
 `timer_start`, `workout_complete`, `workout_create`, `pwa_install`.
 
-- [docs/analytics/README.md](docs/analytics/README.md) — доступы, ключи, цели, Bing, замеры
-- [docs/analytics/issues.md](docs/analytics/issues.md) — проблемы доступности и индексации
+- [docs/analytics/README.md](docs/analytics/README.md) — доступы, ключи, Bing, IndexNow, замеры
+- [docs/analytics/metrika-goals.md](docs/analytics/metrika-goals.md) — как завести цели в Метрике
+- [docs/analytics/issues.md](docs/analytics/issues.md) — доступность, индексация, разбор Ahrefs
+
+## Деплой
+
+Сайт публикуется на GitHub Pages из ветки `main` через
+[.github/workflows/pages.yml](.github/workflows/pages.yml) — каждый push собирает и
+выкатывает, прогон виден во вкладке Actions. Содержимое сайта берётся по списку
+исключений: `docs/`, `scripts/`, `secrets/`, `*.md` и `Makefile` в веб не попадают.
+
+Запустить руками: `gh workflow run pages.yml --repo colizej/1-2 --ref main`
